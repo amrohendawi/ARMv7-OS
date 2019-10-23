@@ -17,7 +17,7 @@ void sendChar(char c){
 
 
 
-void decToHex(int n){
+void decToHexStr(int n){
     char res[50];
     int i = 0;
     
@@ -37,6 +37,24 @@ void decToHex(int n){
     }
 }
 
+void intToStr(char n){
+    if(n >= 48 && n <= 57){
+        sendChar(n);
+    }else{
+        char res[20];
+        int i=0;
+        while(n>0){
+            res[i] = n%10+'0';
+            n/=10; 
+            i++;
+        }
+        i--;
+        while(i >= 0){
+            sendChar(res[i--]);
+        }
+    }
+}
+
 
 void kprintf(char type, ...){
     va_list v1;
@@ -49,38 +67,47 @@ void kprintf(char type, ...){
     {
         case 'c':
             sendChar(ch);
-           str  = " is as a char ";
+           str  = " is as a char: ";
             while (str[0] != 0){
                 sendChar(str[0]);
                 str++;
             }
             sendChar(ch);
-        break;
+            break;
         case 's':
             sendChar(ch);
-            str = " is as a string ";
+            str = " is as a string: ";
             while (str[0] != 0){
                 sendChar(str[0]);
                 str++;
             }
             sendChar(ch);
-        break;        
+            break;        
         case 'x':
             sendChar(ch);
-            char * str = " is in hexadecimal 0x";
+            char * str = " is in hexadecimal: 0x";
             while (str[0] != 0){
                 sendChar(str[0]);
                 str++;
             }
-            decToHex(ch);
-        break;        
+            decToHexStr(ch);
+            break; 
+        case 'i':
+            sendChar(ch);
+            str = " is as integer: ";
+            while (str[0] != 0){
+                sendChar(str[0]);
+                str++;
+            }
+            intToStr(ch);
+            break;
     }
     
 }
 
 char recvChar(void){
     while (_uart->fr & (1 << 4));
-    kprintf('x',_uart->dr);
+    kprintf('i',_uart->dr);
     return _uart->dr;
 }
 
