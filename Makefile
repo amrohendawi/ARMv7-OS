@@ -41,6 +41,10 @@ OBJ += system/start.o
 # Driver
 OBJ += driver/led.o
 OBJ += driver/uart.o
+
+# Library
+OBJ += lib/kprintf.o
+
 # Falls die binäre Musterlösung benutzt wird bitte auskommentieren
 # und gegebenenfalls Ordner anpassen:
 # OBJ_LSG = obj/$(BIN_LSG).o
