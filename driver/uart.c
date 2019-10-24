@@ -16,7 +16,7 @@ void sendChar(char c){
 
 char recvChar(void){
     while (_uart->fr & (1 << 4));
-    kprintf('p',_uart->dr);
+    kprintf('i',_uart->dr);
 
     return _uart->dr;
 }

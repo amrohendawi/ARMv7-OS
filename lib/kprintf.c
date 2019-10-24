@@ -40,7 +40,7 @@ void intToStr(char n){
 }
 
 
-void kprintf(char type, ...){
+int kprintf(char type, ...){
     va_list v1;
     va_start(v1,type);
     sendChar('\n');
@@ -107,6 +107,14 @@ void kprintf(char type, ...){
         case '%':
             sendChar('%');
             break;
+        default:
+            str = "krpintf error : wrong option !! please specify one of the following character: c,s,x,i,u,p,%\n";
+            while (str[0] != 0){
+                sendChar(str[0]);
+                str++;
+                return -1;
+            }
     }
+    return 0;
     
 }
