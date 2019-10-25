@@ -40,20 +40,24 @@ void intToStr(char n){
 }
 
 
-int kprintf(char * Str, ...){
+int kprintf(char * str, ...){
     sendChar('\n');
     int i=0, j=0;
     va_list v1;
     va_start(v1,str);
     // char ch = (char)va_arg(v1,int);
-    char buff[100]={0},tmp[20];
-    while(str && str[i]){
-        if(str[i] == '%'){
+    char buff[100],tmp[20];
+    buff[0] = 0;                // initialize buffer head
+    while(str && str[i]!= 0){
+        if(str[i] != '%'){
+            buff[j++] = str[i++];
+        }
+        else{
             i++;
-            switch(str)
+            switch(str[i])
             {
                 case 'c':
-                    sendChar(str[i]);
+                    buff[j++] = (unsigned char) va_arg(v1,int);
                     i++;
                     break;
                 case 's':
@@ -69,7 +73,7 @@ int kprintf(char * Str, ...){
                         buff++;
                     }
                     break;        
-                case 'x':
+/*                case 'x':
                     sendChar(ch);
                     char * str = " is in hexadecimal: 0x";
                     while (str[0] != 0){
@@ -110,19 +114,17 @@ int kprintf(char * Str, ...){
                     sendChar('%');
                     break;
                 default:
-                    str = "krpintf error : wrong option !! please specify one of the following character: c,s,x,i,u,p,%\n";
+*/                    str = "krpintf error : wrong option !! please specify one of the following character: c,s,x,i,u,p,%\n";
                     while (str[0] != 0){
                         sendChar(str[0]);
                         str++;
                         return -1;
                     }
             }
-            return 0;
-        }
-        else{
-            sendChar(str[i]);
-            i++;
         }
     }
-    
+    for(int i=0; i<=j; i++){
+        sendChar(buff[i]);
+    }
+    return 0;
 }
