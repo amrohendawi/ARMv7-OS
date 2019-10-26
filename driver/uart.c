@@ -15,8 +15,9 @@ void sendChar(char c){
 }
 
 char recvChar(void){
+    kprintf("char %c | string %s | hexa %x | int %i | unint %u | pointer %p | %% \n", 'x',"xyz",15,-15,15,15);
     while (_uart->fr & (1 << 4));
-    kprintf('i',_uart->dr);
+    kprintf("%c hello\n",_uart->dr);
 
     return _uart->dr;
 }
