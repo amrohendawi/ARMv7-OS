@@ -1,11 +1,44 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <string.h>
+//#include <string.h>
 #define BUFF_SIZE (50)
+int kstrlen(const char *str)
+{
+    const char *s;
+    int i=0;
+    for (s = str; *s; ++s);
+    return (s - str);
+}
+
+char* strcpy(char* destination, const char* source)
+{
+	// return if no memory is allocated to the destination
+	if (destination == NULL)
+		return NULL;
+
+	// take a pointer pointing to the beginning of destination string
+	char *ptr = destination;
+	
+	// copy the C-string pointed by source into the array
+	// pointed by destination
+	while (*source != '\0')
+	{
+		*destination = *source;
+		destination++;
+		source++;
+	}
+
+	// include the terminating null character
+	*destination = '\0';
+
+	// destination is returned by standard strcpy()
+	return ptr;
+}
+
 
 void kmemset(char* buff, int n){
-    for(int i=0;i<BUFF_SIZE;i++){
+    for(int i=0;i<n;i++){
         buff[i] = 0;
     }
 
@@ -86,32 +119,32 @@ int print (char * str, ...)
                 {
                     strcpy(tmp, va_arg( vl, void *));
                     strcpy(&buff[j], tmp);
-                    j += strlen(tmp);
+                    j += kstrlen(tmp);
                 break;
                 }
                 case 'x': 
                 {
                     decToHexStr(va_arg(vl,int),tmp,0);
                     strcpy(&buff[j], tmp);
-                    j += strlen(tmp);
+                    j += kstrlen(tmp);
                 break;
                 }
                 case 'i': 
                 {
                     intToStr(va_arg(vl,int),tmp);
                     strcpy(&buff[j], tmp);
-                    j += strlen(tmp);
+                    j += kstrlen(tmp);
                 break;
                 }
                 case 'u':
                     intToStr(va_arg(vl,unsigned int),tmp);
                     strcpy(&buff[j], tmp);
-                    j += strlen(tmp);
+                    j += kstrlen(tmp);
                     break;
                 case 'p':
                     decToHexStr(va_arg(vl,int),tmp,1);
                     strcpy(&buff[j], tmp);
-                    j += strlen(tmp);
+                    j += kstrlen(tmp);
                     break;
                 case '%':
                     buff[j++] = '%';
