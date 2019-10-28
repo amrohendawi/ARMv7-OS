@@ -15,10 +15,15 @@ void sendChar(char c){
 }
 
 char recvChar(void){
-    kprintf("char %c | string %s | hexa %x | int %i | unint %u | pointer %p | %% \n", 'x',"xyz",15,-15,15,15);
+//    kprintf("char %c | string %s | hexa %x | int %i | unint %u | pointer %p | %% | undefined %blabla\n",'x',"dummy string",'c',-15,15,15,"not gonna be printed");
     while (_uart->fr & (1 << 4));
-    kprintf("%c hello\n",_uart->dr);
-
+    unsigned int input = _uart->dr;
+    //kprintf("address of n is %p\n", uar->dr);
+    kprintf("%c is in hexa %x\n",input,input);
+    if(input == 'i'){
+        kprintf("i was pressed ! interrupts enabled.. exiting\n");
+        return _uart->dr;
+    }
     return _uart->dr;
 }
 

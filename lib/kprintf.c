@@ -137,8 +137,7 @@ int kprintf (char * str, ...)
             {
                 case 'c': 
                 {
-                    buff[j] = (char)va_arg( vl, int);
-                    j++;
+                    buff[j++] = (char)va_arg( vl, int);
                     break;
                 }
                 case 's': 
@@ -176,15 +175,14 @@ int kprintf (char * str, ...)
                     buff[j++] = '%';
                     break;
                 default:
-                    // str = "krpintf error : wrong option !! please specify one of the following character: c,s,x,i,u,p,%\n";
-                    // strcpy(&buff[j],str);
-                    return -1;
+                    buff[j++] = '%';
+                    buff[j++] = str[i];
+                    break;
             }
         } 
         else 
         {
-            buff[j] =str[i];
-            j++;
+            buff[j++] =str[i];
         }
         i++;
     }
