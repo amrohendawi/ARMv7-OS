@@ -6,9 +6,9 @@
 
 // initializes a certain buffer with zeros
 void kmemset(char* buff, int n){
-    for(int i=0;i<n;i++){
+    for(int i=0;i<n;i++)
         buff[i] = 0;
-    }
+    
 }
 
 // returns the length of a specific string
@@ -45,19 +45,19 @@ char* strcpy(char* dest, const char* src)
 // converts a decimal number to hexadecimal and packs it in a buffer as a string
 void decToHexStr(int n, char *int_str, int pointer){
     char res[BUFF_SIZE];
-    for(int i=0;i<BUFF_SIZE;i++){
+    for(int i=0;i<BUFF_SIZE;i++)
         res[i]=0;
-    }
+    
     int i=0;
     
     while(n!=0){
         int temp = n%16;
-        if(temp < 10) {
+        if(temp < 10)
             res[i++] = temp + 48;
-        }
-        else{
+        
+        else
             res[i++] = temp + 55;
-        }
+        
         n /= 16;
     }
     i--;
@@ -121,12 +121,12 @@ int kprintf (char * str, ...)
 	va_list vl;
 	int i = 0, j=0;
     char buff[100], tmp[BUFF_SIZE];
-    for(int i=0;i<BUFF_SIZE;i++){
+    for(int i=0;i<BUFF_SIZE;i++)
         tmp[i]=0;
-    }
-    for(int i=0;i<100;i++){
+    
+    for(int i=0;i<100;i++)
         buff[i]=0;
-    }
+    
     va_start( vl, str ); 
     while (str && str[i])
     {
@@ -136,54 +136,55 @@ int kprintf (char * str, ...)
             switch (str[i]) 
             {
                 case 'c': 
-                {
+                
                     buff[j++] = (char)va_arg( vl, int);
                     break;
-                }
+                
                 case 's': 
-                {
+                
                     strcpy(tmp, va_arg( vl, void *));
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
                 break;
-                }
+                
                 case 'x': 
-                {
+                
                     decToHexStr(va_arg(vl,int),tmp,0);
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
                 break;
-                }
+                
                 case 'i': 
-                {
+                
                     intToStr(va_arg(vl,int),tmp,0);
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
                 break;
-                }
+                
                 case 'u':
                     intToStr(va_arg(vl,unsigned int),tmp,1);
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
                     break;
+                    
                 case 'p':
                     decToHexStr(va_arg(vl,int),tmp,1);
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
                     break;
+                    
                 case '%':
                     buff[j++] = '%';
                     break;
+                    
                 default:
                     buff[j++] = '%';
                     buff[j++] = str[i];
-                    break;
+                break;
             }
         } 
         else 
-        {
             buff[j++] =str[i];
-        }
         i++;
     }
     fwrite(buff, j);

@@ -1,8 +1,6 @@
-mcr p15, 0, r0, c12, c0, 0    @ set IVT address in r0
+.global ivt
 
-.global _start
-
-_start:
+ivt:
       b     reset
       ldr   pc, _undefined_instruction
       ldr   pc, _software_interrupt
@@ -19,3 +17,24 @@ _data_abort:            .word data_abort
 _not_used:              .word not_used
 _irq:                   .word irq
 _fiq:                   .word fiq
+
+
+
+vbar:
+    mcr p15, 0, r0, c12, c0, 0    @ set IVT address in r0    
+    tst r0, #3
+	bne    .loop
+	
+	
+loop:
+	WFI
+	b      .loop
+    
+irq:
+	ldr lr, = vbar
+	msr ELR_hyp, lr
+	
+    mrs r0, cpsr
+	bic r0, r0, #0x1F
+	orr r0, r0, #0x13	//Supervisormode
+	msr spsr_hyp, r0
