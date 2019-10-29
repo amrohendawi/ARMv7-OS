@@ -28,6 +28,9 @@ _bsprak:
 	 * Auf dem Pi wurde dieser zwar bereits durch U-Boot
 	 * gesetzt, schadet aber auch nicht
 	 */
+	 ldr r0, =ivt
+	 mcr   p15,0,r0,c12,c0,0
+	 
 	ldr	sp,=0x20000
 	/* Zu c Code springen */
    	bl      start_kernel
