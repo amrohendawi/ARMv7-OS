@@ -1,4 +1,5 @@
 .global ivt
+.balign 32
 
 ivt:
       b     reset
@@ -19,22 +20,23 @@ _irq:                   .word irq
 _fiq:                   .word fiq
 
 
-
+/*
 vbar:
     mcr p15, 0, r0, c12, c0, 0    @ set IVT address in r0    
     tst r0, #3
 	bne    .loop
+	*/
 	
-	
-loop:
+/*loop:
 	WFI
 	b      .loop
+    */
     
 irq:
-	ldr lr, = vbar
-	msr ELR_hyp, lr
+/*	ldr lr, = vbar*/
+	msr r14_irq, lr
 	
     mrs r0, cpsr
-	bic r0, r0, #0x1F
-	orr r0, r0, #0x13	//Supervisormode
-	msr spsr_hyp, r0
+	bic r0, r0, #0x80    // reset current mode to 100 00000
+	orr r0, r0, #0x12	// irq mode
+	msr spsr_irq, r0

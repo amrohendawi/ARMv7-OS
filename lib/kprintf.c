@@ -8,7 +8,6 @@
 void kmemset(char* buff, int n){
     for(int i=0;i<n;i++)
         buff[i] = 0;
-    
 }
 
 // returns the length of a specific string
@@ -136,8 +135,7 @@ int kprintf (char * str, ...)
             switch (str[i]) 
             {
                 case 'c': 
-                
-                    buff[j++] = (char)va_arg( vl, int);
+                    buff[j++] = va_arg( vl, int);
                     break;
                 
                 case 's': 
