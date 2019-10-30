@@ -59,7 +59,6 @@ struct uart {
     unsigned int FBRD;
     unsigned int LCRH;
     unsigned int CR;
-    unsigned int unused3;
     unsigned int IFLS;
     unsigned int IMSC;
     unsigned int RIS;

@@ -72,14 +72,5 @@ _exitHyper:
 	msr spsr_hyp, r0
 	eret
 	
-execute:
-/*	mrs r0, cpsr
-	bic r0, r0, #0x80
-	orr r0, r0, #0x12	//Supervisormode
-    msr spsr_irq, r0
-    eret*/
-    ldr r0, =ivt
-    mcr   p15,0,r0,c12,c0,0
-    add pc, r0, #24
 
 	

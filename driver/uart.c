@@ -19,10 +19,9 @@ char recvChar(void){
     // when interrupts are supposed to take action... Aufgabe 3 & 4
     if(input == 'i'){
 //         kprintf("\n\nenable_IRQs_2: %x \n",(_interrupts->enable_IRQs_2 >> 25)&1);
-        kprintf("%c is pressed !! interrupt should be released \n", input);
+        kprintf("%c is pressed !! one more button to activate the interrupt \n\n", input);
         //warte bis Transmission fertig ist
-//         while(_uart->FR & UART_FR_BUSY);
-        execute();
+        while(_uart->FR & BUSY);
         // enable uart_int interrupt
         _interrupts->enable_IRQs_2 |= (1<<25);        
         // disable UART
