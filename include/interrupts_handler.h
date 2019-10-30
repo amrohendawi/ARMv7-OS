@@ -13,11 +13,16 @@ struct interrupts_base {
     volatile unsigned int disable_IRQs_1;
     volatile unsigned int disable_IRQs_2;
     volatile unsigned int disable_basic_IRQs;
-    
 };
 
 static volatile struct interrupts_base * const _interrupts = (struct interrupts_base *)INTERRUPT_BASE;
+
 void reset_handler();
+void undefined_instruction_handler();
+void software_interrupt_handler();
+void prefetch_abort_handler();
+void data_abort_handler();
+void not_used_handler();
 void irq_handler();
 void fiq_handler();
 

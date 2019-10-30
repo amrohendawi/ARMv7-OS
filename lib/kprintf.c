@@ -54,7 +54,6 @@ void decToHexStr(int n, char *int_str, int pointer){
         int temp = n%16;
         if(temp < 10)
             res[i++] = temp + 48;
-        
         else
             res[i++] = temp + 55;
         
@@ -136,13 +135,10 @@ void fwrite(char * buff, int len){
 // a primitive implementation of printf
 int kprintf (char * str, ...)
 {
-    i=0;
-    j=0;
 	va_list vl;
     
     kmemset(tmp,BUFF_SIZE);
-    kmemset(tmp,BUFF_SIZE);
-
+    i=0;j=0;
     
     va_start( vl, str ); 
     while (str && str[i])

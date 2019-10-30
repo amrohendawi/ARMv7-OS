@@ -37,8 +37,9 @@ KERNEL_USER_SPLIT = false
 # System
 OBJ = system/entry.o
 OBJ += system/start.o
-OBJ += system/ivt.o
 OBJ += system/interrupts_handler.o
+OBJ += system/ivt.o
+
 # Driver
 OBJ += driver/led.o
 OBJ += driver/uart.o

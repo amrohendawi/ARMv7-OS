@@ -4,6 +4,7 @@
 #include <uart.h>
 #include <interrupts_handler.h>
 
+
 // extern unsigned int vbar();
 // extern unsigned int ivt();
 
@@ -11,7 +12,7 @@
 
 void delay_some_time()
 {
-    for (int i = 0; i < 10000; i++)
+    for (int i = 0; i < 100; i++)
         kprintf("nop\n");
 }
 
@@ -43,6 +44,7 @@ void not_used_handler() {
 void irq_handler() {
     kprintf("%c was catched irq_handler is activated\n", _uart->DR);
     delay_some_time();
+    while(1);
 }
 void fiq_handler() {
     kprintf("%c was catched fiq_handler is activated\n", _uart->DR);

@@ -1,6 +1,6 @@
 .section .init
-
 .global _start
+.global execute
 _start:
 	/* Erkennen ob Hypervisor Mode aktiv */
 	mrs r0, cpsr
@@ -25,20 +25,26 @@ _loopCores:
 	/* Falls nicht core 0 -> Endless loop */
 	tst r0, #3
 	bne .Lend
-
+    
 _bsprak:
 	/* Wir brauchen einen validen Stack für Qemu.
 	 * Auf dem Pi wurde dieser zwar bereits durch U-Boot
 	 * gesetzt, schadet aber auch nicht
 	 */
 
-	 
+
 	ldr	sp,=0x20000
-	/* Zu c Code springen */
+	mrc p15, 0, r0, c0, c0, 5
+
     cpsie i
     ldr r0, =ivt
     mcr   p15,0,r0,c12,c0,0
+
+   /* add pc, r0, #24 */
+   /* wenn die aktiv ist, springt er direkt in die nummer 24 in der ivt beim hochfahren, also direkt in ldr irq, dann leuchtet die lampe und er printet nops, der fehler ist also dass er keine interrupts wirft oder die nicht ankommen, der ivt und der interrupt handler ist korrekt*/
+    /* Zu c Code springen */
 	 
+
    	bl      start_kernel
    	
 .Lend:  
@@ -65,3 +71,15 @@ _exitHyper:
 	orr r0, r0, #0x13	//Supervisormode
 	msr spsr_hyp, r0
 	eret
+	
+execute:
+/*	mrs r0, cpsr
+	bic r0, r0, #0x80
+	orr r0, r0, #0x12	//Supervisormode
+    msr spsr_irq, r0
+    eret*/
+    ldr r0, =ivt
+    mcr   p15,0,r0,c12,c0,0
+    add pc, r0, #24
+
+	

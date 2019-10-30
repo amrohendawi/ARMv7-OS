@@ -1,3 +1,4 @@
+.section .text
 .global ivt
 .balign 32
 
@@ -23,21 +24,20 @@ _fiq:                   .word fiq
 
 reset:
 /*	mrc p15, 0, r0, c0, c0, 5*/
-/*     ldr	sp,=0xA0000 */
     bl yellow_on
     b       reset_handler
 
 undefined_instruction:
-    ldr	sp,=0x20000
+    ldr	sp,=0x40000
     bl yellow_on
 
 /*    sub     lr, lr, #4
     push    {r0-r3, r12, lr}*/
     bl      undefined_instruction_handler
-    ldmfd   sp!, {r1,lr}
+/*    ldmfd   sp!, {r1,lr}*/
     
 software_interrupt:
-    ldr	sp,=0x20000
+    ldr	sp,=0x50000
     bl yellow_on
 /*    sub     lr, lr, #4
     push    {r0-r3, r12, lr}
@@ -51,7 +51,7 @@ software_interrupt:
     rfeia   sp!*/
     
 prefetch_abort:
-    ldr	sp,=0x20000
+    ldr	sp,=0x60000
     bl yellow_on
 /*    sub     lr, lr, #4
     push    {r0-r3, r12, lr}
@@ -65,7 +65,7 @@ prefetch_abort:
     rfeia   sp!*/
     
 data_abort:
-    ldr	sp,=0x20000
+    ldr	sp,=0x70000
     bl yellow_on
 /*    sub     lr, lr, #4
     push    {r0-r3, r12, lr}
@@ -79,14 +79,14 @@ data_abort:
     rfeia   sp!*/
     
 not_used:
-    ldr	sp,=0x20000
+    ldr	sp,=0x80000
     bl yellow_on
+    bl      not_used_handler
 /*    sub     lr, lr, #4
     push    {r0-r3, r12, lr}
     and     r1, sp, #4
     sub     sp, sp, r1
     push    {r1}*/
-    bl      not_used_handler
 /*    pop     {r1}
     add     sp, sp, r1
     pop     {r0-r3, r12, lr}
@@ -95,21 +95,21 @@ not_used:
 irq:
     ldr	sp,=0x20000
     bl yellow_on
-/*    sub     lr, lr, #4
+    bl      irq_handler
+ /*   sub     lr, lr, #4
     push    {r0-r3, r12, lr}
     and     r1, sp, #4
     sub     sp, sp, r1
-    push    {r1}*/
-    bl      irq_handler
-/*    pop     {r1}
+    push    {r1}
+    pop     {r1}
     add     sp, sp, r1
     pop     {r0-r3, r12, lr}
     rfeia   sp!*/
 
 fiq:
-    ldr	sp,=0x20000
+    ldr	sp,=0xA0000
     bl yellow_on
 
     bl      fiq_handler
-    sub     lr, lr, #4
-    push    {r0-r3, r12, lr}
+/*    sub     lr, lr, #4
+    push    {r0-r3, r12, lr}*/

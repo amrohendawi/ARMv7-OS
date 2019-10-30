@@ -3,50 +3,50 @@
 #define UART_BASE (0x7E201000 - 0x3F000000)
 
 /* flag register bits */
-#define UART_FR_RTXDIS	(1 << 13)
-#define UART_FR_TERI	(1 << 12)
-#define UART_FR_DDCD	(1 << 11)
-#define UART_FR_DDSR	(1 << 10)
-#define UART_FR_DCTS	(1 << 9)
-#define UART_FR_RI	     (1 << 8)
-#define UART_FR_TXFE	(1 << 7)
-#define UART_FR_RXFF	(1 << 6)
-#define UART_FR_TXFF	(1 << 5)
-#define UART_FR_RXFE	(1 << 4)
-#define UART_FR_BUSY	(1 << 3)
-#define UART_FR_DCD	(1 << 2)
-#define UART_FR_DSR	(1 << 1)
-#define UART_FR_CTS	(1 << 0)
+#define RTXDIS	(1 << 13)
+#define TERI	(1 << 12)
+#define DDCD	(1 << 11)
+#define DDSR	(1 << 10)
+#define DCTS	(1 << 9)
+#define RI	     (1 << 8)
+#define TXFE	(1 << 7)
+#define RXFF	(1 << 6)
+#define TXFF	(1 << 5)
+#define RXFE	(1 << 4)
+#define BUSY	(1 << 3)
+#define DCD	(1 << 2)
+#define DSR	(1 << 1)
+#define CTS	(1 << 0)
 
 
 /* transmit/receive line register bits */
-#define UART_LCRH_SPS		(1 << 7)
-#define UART_LCRH_WLEN_8	(3 << 5)
-#define UART_LCRH_WLEN_7	(2 << 5)
-#define UART_LCRH_WLEN_6	(1 << 5)
-#define UART_LCRH_WLEN_5	(0 << 5)
-#define UART_LCRH_FEN		(1 << 4)
-#define UART_LCRH_STP2		(1 << 3)
-#define UART_LCRH_EPS		(1 << 2)
-#define UART_LCRH_PEN		(1 << 1)
-#define UART_LCRH_BRK		(1 << 0)
+#define SPS		(1 << 7)
+#define WLEN_8	(3 << 5)
+#define WLEN_7	(2 << 5)
+#define WLEN_6	(1 << 5)
+#define WLEN_5	(0 << 5)
+#define FEN		(1 << 4)
+#define STP2		(1 << 3)
+#define EPS		(1 << 2)
+#define PEN		(1 << 1)
+#define BRK		(1 << 0)
 
 /* control register bits */
-#define UART_CR_CTSEN		(1 << 15)
-#define UART_CR_RTSEN		(1 << 14)
-#define UART_CR_OUT2		(1 << 13)
-#define UART_CR_OUT1		(1 << 12)
-#define UART_CR_RTS		(1 << 11)
+#define CTSEN		(1 << 15)
+#define RTSEN		(1 << 14)
+#define OUT2		(1 << 13)
+#define OUT1		(1 << 12)
+#define RTS		(1 << 11)
 
-#define UART_CR_DTR		(1 << 10)
-#define UART_CR_RXE		(1 << 9)
-#define UART_CR_TXE		(1 << 8)
-#define UART_CR_LPE		(1 << 7)
-#define UART_CR_OVSFACT		(1 << 3)
-#define UART_CR_UARTEN		(1 << 0)
+#define DTR		(1 << 10)
+#define RXE		(1 << 9)
+#define TXE		(1 << 8)
+#define LPE		(1 << 7)
+#define OVSFACT		(1 << 3)
+#define UARTEN		(1 << 0)
 
-#define UART_IMSC_RTIM		(1 << 6)
-#define UART_IMSC_RXIM		(1 << 4)
+#define RTIM		(1 << 6)
+#define RXIM		(1 << 4)
 
 
 struct uart {
@@ -66,7 +66,7 @@ struct uart {
     unsigned int MIS;
     unsigned int ICR;
     unsigned int DMACR;
-    unsigned int unused4;
+    unsigned int unused4[9];
     unsigned int ITCR;
     unsigned int ITIP;
     unsigned int ITOP;
