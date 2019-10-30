@@ -6,6 +6,9 @@ _start:
 	mrs r0, cpsr
 	and r0, r0, #0x1F
 	mov r1, #0x1A	//Modebits = 0x1A = Hypervisor Mode
+	
+
+	 
 	cmp r0, r1		//Vergleichen und Statusbits setzen für bedingte Sprünge
 	
 	/* Wenn Hypemode erkannt: abschalten (sprung nach _exitHyper)
@@ -28,12 +31,16 @@ _bsprak:
 	 * Auf dem Pi wurde dieser zwar bereits durch U-Boot
 	 * gesetzt, schadet aber auch nicht
 	 */
-	 ldr r0, =ivt
-	 mcr   p15,0,r0,c12,c0,0
+
 	 
 	ldr	sp,=0x20000
 	/* Zu c Code springen */
+    cpsie i
+    ldr r0, =ivt
+    mcr   p15,0,r0,c12,c0,0
+	 
    	bl      start_kernel
+   	
 .Lend:  
 	WFI
 	b       .Lend

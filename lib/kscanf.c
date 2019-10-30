@@ -1,18 +1,28 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include<stdarg.h>
+#include <uart.h>
+#include <stdarg.h>
+#include <kprintf.h>
+#define NULL ((void *)-1)
 
-int scan (char * str, ...)
+int fread(char *c, char recv){
+    *c = recv;
+    return *c;
+}
+
+
+int kscanf (char * str, ...)
 {
     va_list vl;
     int i = 0, j=0, counter = 0;
-    char buff[100] = {0}, tmp[20], c;
-    char *out_loc;
+    char buff[100],c;
+    kmemset(buff,100);
+    
+//     char *out_loc;
     while(c != '\n')
     {
-        if (fread(&c, 1, 1, stdin)) 
+        if (fread(&c,recvChar())) 
         {
  	       buff[i] = c;
+           sendChar(c);
  	       i++;
  	    }
  	}
@@ -32,29 +42,34 @@ int scan (char * str, ...)
 	 	           counter ++;
 	 	           break;
 
- 	           case 's': 
-	 	           *(char *)va_arg( vl, char* ) = buff[j];
-	 	           j++;
-	 	           counter ++;
-	 	           break;
+//  	           case 's':
+//                     kmemset(tmp,100);
+//                     y=0;
+//                    while(buff[j] != ' ' || buff[j] != '\n'){
+//                    tmp[y++] = buff[j];
+//                     j++;
+//                     counter ++;
+//                    }
+//                    va_arg( vl, char* ) = tmp;
+// 	 	           break;
 
- 	            case 'x': 
-	 	           *(int *)va_arg( vl, int* ) =strtol(&buff[j], &out_loc, 16);
-	 	           j+=out_loc -&buff[j];
-	 	           counter++;
-	 	           break;
+//  	            case 'x': 
+// 	 	           *(int *)va_arg( vl, int* ) =strtol(&buff[j], &out_loc, 16);
+// 	 	           j+=out_loc -&buff[j];
+// 	 	           counter++;
+// 	 	           break;
 
- 	           case 'i': 
-	 	           *(int *)va_arg( vl, int* ) =strtol(&buff[j], &out_loc, 10);
-	 	           j+=out_loc -&buff[j];
-	 	           counter++;
-	 	           break;
+//  	           case 'i': 
+// 	 	           *(int *)va_arg( vl, int* ) = strtol(&buff[j], &out_loc, 10);
+// 	 	           j+=out_loc - &buff[j];
+// 	 	           counter++;
+// 	 	           break;
 
- 	           case 'p': 
-	 	           *(int *)va_arg( vl, int* ) =strtol(&buff[j], &out_loc, 10);
-	 	           j+=out_loc -&buff[j];
-	 	           counter++;
-	 	           break;
+//  	           case 'p': 
+// 	 	           *(int *)va_arg( vl, int* ) =strtol(&buff[j], &out_loc, 10);
+// 	 	           j+=out_loc -&buff[j];
+// 	 	           counter++;
+// 	 	           break;
 
  	           case '%': 
 	 	           *(char *)va_arg( vl, char* ) = '%';
@@ -71,17 +86,5 @@ int scan (char * str, ...)
         i++;
     }
     va_end(vl);
-    printf("j is %d and counter %d\n\n", j,counter);
     return counter;
-}
-int main(int argc, char *argv[])
-{
-	char c,d;
-	int i;
-	int h;
-	int counter = 0;
-    printf("enter char integer hexa %\n");
-	counter = scan("%c %i %x %%", &c, &i, &h, &d);
-	printf("C = %c, I = %d, H = %d, counter %d %% returns %c\n", c, i, h, counter,d);
-	return 0;
 }

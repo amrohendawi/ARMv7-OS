@@ -1,9 +1,12 @@
 #include <uart.h>
 #include <stdarg.h>
-#define BUFF_SIZE (50)
+#define BUFF_SIZE (500)
 #define NULL ((void *)-1)
 
+char buff[BUFF_SIZE], tmp[BUFF_SIZE];
+int i,j;
 
+    
 // initializes a certain buffer with zeros
 void kmemset(char* buff, int n){
     for(int i=0;i<n;i++)
@@ -23,10 +26,8 @@ char* strcpy(char* dest, const char* src)
 	// returns NULL if no memory is allocated for dest
 	if (dest == NULL)
 		return NULL;
-
 	// pointer of the beginning of string
 	char *p = dest;
-	
 	// keep copying chars until the end of string (null)
 	while (*src != '\0')
 	{
@@ -74,30 +75,48 @@ void decToHexStr(int n, char *int_str, int pointer){
 }
 
 // converts int to a string and packs it in a buffer
-// for unsigned numbers an extra conversion is made
-void intToStr(int n, char *int_str, int unsig){
-    long int n_l = n;
+void intToStr(int n, char *int_str){
     char res[BUFF_SIZE];
-    for(int i=0;i<BUFF_SIZE;i++){
-        res[i]=0;
-    }
+
     int i=0;
     int j=0;
+    kmemset(res,BUFF_SIZE);
     kmemset(int_str,BUFF_SIZE);
-    if(unsig){
-        unsigned int n_unsigned = n;
-        n_l = n_unsigned;
-    }
-    if(n_l<0 && !unsig){
-        n_l *= (-1);
+
+    if(n<0){
+        n *= (-1);
         int_str[j++] = '-';
     }
-    if(n_l >= 48 && n_l <= 57){
-        res[i++]=n_l;
+    if(n >= 48 && n <= 57){
+        res[i++]=n;
     }else{
-        while(n_l>0){
-            res[i++] = n_l%10+'0';
-            n_l/=10; 
+        while(n>0){
+            res[i++] = n%10+'0';
+            n/=10; 
+        }
+    }
+    i--;
+    while(i>=0){
+        int_str[j] = res[i];
+        j++;i--;
+    }
+}
+
+// converts int to a string and packs it in a buffer
+void unintToStr(unsigned int n, char *int_str){
+    char res[BUFF_SIZE];
+    kmemset(res,BUFF_SIZE);
+    kmemset(int_str,BUFF_SIZE);
+
+    int i=0;
+    int j=0;
+
+    if(n >= 48 && n <= 57){
+        res[i++]=n;
+    }else{
+        while(n>0){
+            res[i++] = n%10+'0';
+            n/=10; 
         }
     }
     i--;
@@ -117,14 +136,13 @@ void fwrite(char * buff, int len){
 // a primitive implementation of printf
 int kprintf (char * str, ...)
 {
+    i=0;
+    j=0;
 	va_list vl;
-	int i = 0, j=0;
-    char buff[100], tmp[BUFF_SIZE];
-    for(int i=0;i<BUFF_SIZE;i++)
-        tmp[i]=0;
     
-    for(int i=0;i<100;i++)
-        buff[i]=0;
+    kmemset(tmp,BUFF_SIZE);
+    kmemset(tmp,BUFF_SIZE);
+
     
     va_start( vl, str ); 
     while (str && str[i])
@@ -139,14 +157,12 @@ int kprintf (char * str, ...)
                     break;
                 
                 case 's': 
-                
                     strcpy(tmp, va_arg( vl, void *));
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
                 break;
                 
                 case 'x': 
-                
                     decToHexStr(va_arg(vl,int),tmp,0);
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
@@ -154,13 +170,13 @@ int kprintf (char * str, ...)
                 
                 case 'i': 
                 
-                    intToStr(va_arg(vl,int),tmp,0);
+                    intToStr(va_arg(vl,int),tmp);
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
                 break;
                 
                 case 'u':
-                    intToStr(va_arg(vl,unsigned int),tmp,1);
+                    unintToStr(va_arg(vl,unsigned int),tmp);
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
                     break;

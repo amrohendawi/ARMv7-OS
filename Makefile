@@ -37,13 +37,15 @@ KERNEL_USER_SPLIT = false
 # System
 OBJ = system/entry.o
 OBJ += system/start.o
-
+OBJ += system/ivt.o
+OBJ += system/interrupts_handler.o
 # Driver
 OBJ += driver/led.o
 OBJ += driver/uart.o
 
 # Library
 OBJ += lib/kprintf.o
+OBJ += lib/kscanf.o
 
 # Falls die binäre Musterlösung benutzt wird bitte auskommentieren
 # und gegebenenfalls Ordner anpassen:

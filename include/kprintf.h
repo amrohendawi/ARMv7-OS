@@ -3,7 +3,7 @@
 
 int kstrlen(const char *str);
 char* strcpy(char* destination, const char* source);
-void k_memset(char* buff, int n);
+void kmemset(char* buff, int n);
 void decToHexStr(int n, char *int_str, int pointer);
 void intToStr(int n, char *int_str, int unsig);
 void kprintf(char * str, ...);
