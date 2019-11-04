@@ -28,8 +28,6 @@ char recvChar(void){
         _uart->CR &= ~(1);
         //disable FIFO
         _uart->LCRH &= ~(1<<4);
-        // setzt IFLS 5:0 bits auf 000000 --> Interrupt is triggered when FIFO gets 1/8 full receive and transmit
-        _uart->IFLS &= ~(0b000000);
         // setzt RXIM bit auf 1 --> Receive interrupt mask is set
         _uart->IMSC |= (1<<4);
         // UART enable
