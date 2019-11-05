@@ -36,7 +36,6 @@ _bsprak:
 	ldr	sp,=0x20000
 	mrc p15, 0, r0, c0, c0, 5
 
-    cpsie i
     ldr r0, =ivt
     mcr   p15,0,r0,c12,c0,0
 

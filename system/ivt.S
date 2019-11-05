@@ -2,6 +2,7 @@
 .global ivt
 .balign 32
 
+
 ivt:
       b     _reset
       ldr   pc, _undefined_instruction
@@ -23,93 +24,68 @@ _fiq:                   .word fiq
 
 
 reset:
-/*	mrc p15, 0, r0, c0, c0, 5*/
+    ldr sp,=0x20000
     bl yellow_on
     b       reset_handler
 
 undefined_instruction:
-    ldr	sp,=0x40000
-    bl yellow_on
-
-/*    sub     lr, lr, #4
-    push    {r0-r3, r12, lr}*/
+    ldr	sp,=0x30000
+    sub     lr, lr, #4
+    stm     sp,{r0-r12, lr}^
+    mov    r0, sp
     bl      undefined_instruction_handler
-/*    ldmfd   sp!, {r1,lr}*/
+    ldm     sp,{r0-r12,lr}^
+    movs         pc, lr
     
 software_interrupt:
-    ldr	sp,=0x50000
-    bl yellow_on
-/*    sub     lr, lr, #4
-    push    {r0-r3, r12, lr}
-    and     r1, sp, #4
-    sub     sp, sp, r1
-    push    {r1}*/
+    ldr	sp,=0x40000
+    sub     lr, lr, #4
+    stm     sp,{r0-r12, lr,r15}
+    mrs     r0, sp_svc
+    mrs     r3, spsr_svc
     bl      software_interrupt_handler
-/*    pop     {r1}
-    add     sp, sp, r1
-    pop     {r0-r3, r12, lr}
-    rfeia   sp!*/
+    ldm     sp,{r0-r12,lr}^
+    movs         pc, lr
+
+
     
 prefetch_abort:
-    ldr	sp,=0x60000
-    bl yellow_on
-/*    sub     lr, lr, #4
-    push    {r0-r3, r12, lr}
-    and     r1, sp, #4
-    sub     sp, sp, r1
-    push    {r1}*/
+    ldr	sp,=0x50000
+    sub     lr, lr, #4
+    stm     sp,{r0-r12, lr}
+    mov    r0, sp
     bl      prefetch_abort_handler
-/*    pop     {r1}
-    add     sp, sp, r1
-    pop     {r0-r3, r12, lr}
-    rfeia   sp!*/
+    ldm     sp,{r0-r12,lr}^
+    movs         pc, lr
     
 data_abort:
-    ldr	sp,=0x70000
-    bl yellow_on
-/*    sub     lr, lr, #4
-    push    {r0-r3, r12, lr}
-    and     r1, sp, #4
-    sub     sp, sp, r1
-    push    {r1}*/
+    ldr	sp,=0x60000
+    sub     lr, lr, #8
+    stm     sp,{r0-r12, lr}
+    mov    r0, sp
     bl      data_abort_handler
-/*    pop     {r1}
-    add     sp, sp, r1
-    pop     {r0-r3, r12, lr}
-    rfeia   sp!*/
-    
+    ldm     sp,{r0-r12,lr}^
+    movs         pc, lr
+/* leer*/
 not_used:
-    ldr	sp,=0x80000
-    bl yellow_on
-    bl      not_used_handler
-/*    sub     lr, lr, #4
-    push    {r0-r3, r12, lr}
-    and     r1, sp, #4
-    sub     sp, sp, r1
-    push    {r1}*/
-/*    pop     {r1}
-    add     sp, sp, r1
-    pop     {r0-r3, r12, lr}
-    rfeia   sp!*/
+
     
 irq:
-    ldr	sp,=0x20000
-    bl yellow_on
+    ldr	sp,=0x70000
+    sub     lr, lr, #8
+    stm     sp,{r0-r12, lr}
+    mov    r0, sp
     bl      irq_handler
- /*   sub     lr, lr, #4
-    push    {r0-r3, r12, lr}
-    and     r1, sp, #4
-    sub     sp, sp, r1
-    push    {r1}
-    pop     {r1}
-    add     sp, sp, r1
-    pop     {r0-r3, r12, lr}
-    rfeia   sp!*/
+    ldm     sp,{r0-r12,lr}^
+    movs         pc, lr
 
 fiq:
-    ldr	sp,=0xA0000
-    bl yellow_on
-
+    ldr	sp,=0x80000
+    sub     lr, lr, #8
+    stm     sp,{r0-r12, lr}
+    mov    r0, sp
     bl      fiq_handler
-/*    sub     lr, lr, #4
-    push    {r0-r3, r12, lr}*/
+    ldm     sp,{r0-r12,lr}^
+    movs         pc, lr
+    
+    
