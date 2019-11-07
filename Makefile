@@ -36,9 +36,13 @@ KERNEL_USER_SPLIT = false
 # Hier eure Dateien hinzufügen
 # System
 OBJ = system/entry.o
+
 OBJ += system/start.o
 OBJ += system/interrupts_handler.o
 OBJ += system/ivt.o
+OBJ += system/routine.o
+OBJ += system/timer.o
+
 
 # Driver
 OBJ += driver/led.o
@@ -47,6 +51,7 @@ OBJ += driver/uart.o
 # Library
 OBJ += lib/kprintf.o
 OBJ += lib/kscanf.o
+
 
 # Falls die binäre Musterlösung benutzt wird bitte auskommentieren
 # und gegebenenfalls Ordner anpassen:

@@ -1,6 +1,6 @@
 #include <uart.h>
 #include <stdarg.h>
-#define BUFF_SIZE (500)
+#define BUFF_SIZE (512)
 #define NULL ((void *)-1)
 
 char buff[BUFF_SIZE], tmp[BUFF_SIZE];

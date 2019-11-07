@@ -1,7 +1,7 @@
 .section .text
 .global ivt
 .balign 32
-
+.global cause_data_abort
 
 ivt:
       b     _reset
@@ -24,12 +24,12 @@ _fiq:                   .word fiq
 
 
 reset:
-    ldr sp,=0x20000
-    bl yellow_on
+/*     ldr sp,=0x20000 */
+/*     bl yellow_on */
     b       reset_handler
 
 undefined_instruction:
-    ldr	sp,=0x30000
+/*    ldr	sp,=0x30000*/
     sub     lr, lr, #4
     stm     sp,{r0-r12, lr}^
     mov    r0, sp
@@ -38,7 +38,7 @@ undefined_instruction:
     movs         pc, lr
     
 software_interrupt:
-    ldr	sp,=0x40000
+/*     ldr	sp,=0x40000 */
     sub     lr, lr, #4
     stm     sp,{r0-r12, lr,r15}
     mrs     r0, sp_svc
@@ -50,7 +50,7 @@ software_interrupt:
 
     
 prefetch_abort:
-    ldr	sp,=0x50000
+/*     ldr	sp,=0x50000 */
     sub     lr, lr, #4
     stm     sp,{r0-r12, lr}
     mov    r0, sp
@@ -59,7 +59,7 @@ prefetch_abort:
     movs         pc, lr
     
 data_abort:
-    ldr	sp,=0x60000
+/*     ldr	sp,=0x60000 */
     sub     lr, lr, #8
     stm     sp,{r0-r12, lr}
     mov    r0, sp
@@ -71,7 +71,7 @@ not_used:
 
     
 irq:
-    ldr	sp,=0x70000
+/*     ldr	sp,=0x70000 */
     sub     lr, lr, #8
     stm     sp,{r0-r12, lr}
     mov    r0, sp
@@ -80,7 +80,7 @@ irq:
     movs         pc, lr
 
 fiq:
-    ldr	sp,=0x80000
+/*     ldr	sp,=0x80000 */
     sub     lr, lr, #8
     stm     sp,{r0-r12, lr}
     mov    r0, sp
@@ -88,4 +88,8 @@ fiq:
     ldm     sp,{r0-r12,lr}^
     movs         pc, lr
     
-    
+cause_data_abort:
+    mov r0, #0xFFFFFFFF   
+    push {r0} 
+    pop  {pc}
+

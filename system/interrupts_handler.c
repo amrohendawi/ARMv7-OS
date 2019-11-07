@@ -3,9 +3,15 @@
 #include <kprintf.h>
 #include <uart.h>
 #include <interrupts_handler.h>
+#include <timer.h>
 
 extern int _start();
 char str[10];
+int IRQ_Debug = 0;
+
+void set_IRQ_DEBUG(int value){
+    IRQ_Debug = value;
+}
 
 struct regStack{
   unsigned int r0;  
@@ -19,12 +25,11 @@ struct regStack{
   unsigned int r8;  
   unsigned int r9;  
   unsigned int r10;  
-  unsigned int r11;  
+  unsigned int r11;
   unsigned int r12;
   unsigned int lr;
   unsigned int pc;
 };
-
 
 
 struct interrupts_base {
@@ -41,61 +46,130 @@ struct interrupts_base {
 };
 
 
+struct lt_struct {
+    unsigned int LIR;
+    unsigned int unused[3];
+    unsigned int LTC;
+    unsigned int LT_IRQ;
+};
+
+void da_report(){
+    unsigned int DFSR=0,DFAR=0;
+    asm("MRC p15, 0, %[result], c5, c0, 0" : [result] "=r" (DFSR));
+    asm("MRC p15, 0, %[result], c6, c0, 0" : [result] "=r" (DFAR));
+    
+    kprintf("Zugriff: lesend auf Adresse %p\n",DFAR);
+//     kprintf("DFSR : %x\n",DFSR);
+    switch(DFSR & 31){
+        case 0b00000:
+            kprintf("Fehler: No function, reset value\n");
+        break;
+        
+        case 0b00001:
+            kprintf("Fehler: Alignment fault\n");
+        break;
+        
+        case 0b00010:
+            kprintf("Fehler:Debug event fault\n");
+        break;
+        
+        case 0b00011:
+            kprintf("Fehler: Access Flag fault on Section\n");
+        break;
+        
+        case 0b00100:
+            kprintf("Fehler: Cache maintenance operation fault[b]\n");
+        break;
+        
+        case 0b00101:
+            kprintf("Fehler: Translation fault on Section\n");
+        break;
+        
+        case 0b00110:
+            kprintf("Fehler: Access Flag fault on Page\n");
+        break;
+        
+        case 0b00111:
+            kprintf("Fehler: Translation fault on Page\n");
+        break;
+        
+        case 0b01000:
+            kprintf("Fehler: Precise External Abort\n");
+        break;
+        
+        case 0b01001:
+            kprintf("Fehler: Domain fault on Section\n");
+        break;
+        
+        case 0b01010:
+            kprintf("Fehler: No function\n");
+        break;
+        
+        case 0b01011:
+            kprintf("Fehler: Domain fault on Page\n");
+        break;
+        
+        case 0b01100:
+            kprintf("Fehler: External abort on translation, first level\n");
+        break;
+        
+        case 0b01101:
+            kprintf("Fehler: Permission fault on Section\n");
+        break;
+        
+        case 0b01110:
+            kprintf("Fehler: External abort on translation, second level\n");
+        break;
+        
+        case 0b01111:
+            kprintf("Fehler: Permission fault on Page\n");
+        break;
+        
+        case 0b10110:
+            kprintf("Fehler: Imprecise External Abort\n");
+        break;
+        
+        case 0b10111:
+            kprintf("Fehler: No function\n");
+        break;
+        
+        default:
+            if((DFSR & 28) == 0b100)
+                kprintf("Fehler: No function\n");
+            else if((DFSR & 30) == 0b1010)
+                kprintf("Fehler: No function\n");
+//             else if((DFSR & 24) == 0b11)
+//                 kprintf("Fehler: No function\n");
+        break;
+    }
+}
+
+
+
+
 void bitsToLetters(unsigned int bitstring){
     kmemset(str,10);
-    if(bitstring & (1<< 31))
-        str[0] = 'N';
-    else
-        str[0] = '_';
     
-    if(bitstring & (1<< 30))
-        str[1] = 'Z';
-    else
-        str[1] = '_';
-    
-    if(bitstring & (1<< 29))
-        str[2] = 'C';
-    else
-        str[2] = '_';
-    
-    if(bitstring & (1<< 28))
-        str[3] = 'V';
-    else
-        str[3] = '_';
-    
+    str[0] = (bitstring & (1<< 31)) ? 'N' : '_';
+    str[1] = (bitstring & (1<< 30)) ? 'Z' : '_';
+    str[2] = (bitstring & (1<< 29)) ? 'C' : '_';
+    str[3] = (bitstring & (1<< 28)) ? 'V' : '_';
     str[4] = ' ';
-    
-    if(bitstring & (1<< 9))
-        str[5] = 'E';
-    else
-        str[5] = '_';
-    
+    str[5] = (bitstring & (1<< 9)) ? 'E' : '_';
     str[6] = ' ';
-    
-    if(bitstring & (1<< 7))
-        str[7] = 'I';
-    else
-        str[7] = '_';
-    
-    if(bitstring & (1<< 6))
-        str[8] = 'F';
-    else
-        str[8] = '_';
-    
-    if(bitstring & (1<< 5))
-        str[9] = 'T';
-    else
-        str[9] = '_';
+    str[7] = (bitstring & (1<< 7)) ? 'I' : '_';
+    str[8] = (bitstring & (1<< 6)) ? 'F' : '_';
+    str[9] = (bitstring & (1<< 5)) ? 'T' : '_';
 }
 
 void amr_print(unsigned int spsr1){
     unsigned int cpsr=0,lr=0,sp=0,spsr=spsr1;
     asm("mrs %[result], cpsr" : [result] "=r" (cpsr));
-    kprintf("\n>>> Aktuelle modusspezifische Register <<<\n\t\tLR\t\t   SP\t   SPSR\n");
+    kprintf("\n>>> Aktuelle modusspezifische Register <<<\n\t\tLR\t\t   SP\t\t   SPSR\n");
     
     asm("mrs %[result], lr_usr" : [result] "=r" (lr));
     asm("mrs %[result], sp_usr" : [result] "=r" (sp));
-    kprintf("User/System:\t%p     \t%p\n",lr,sp);
+    kprintf("User/System:\t%p\t\t   %p\n",lr,sp);
     
     asm("mrs %[result], lr_svc" : [result] "=r" (lr));
     asm("mrs %[result], sp_svc" : [result] "=r" (sp));
@@ -106,46 +180,32 @@ void amr_print(unsigned int spsr1){
     asm("mrs %[result], sp_abt" : [result] "=r" (sp));
     asm("mrs %[result], spsr_abt" : [result] "=r" (spsr));
     bitsToLetters(spsr);    
-    kprintf("Abort:\t\t%p\t\t   %p\t%s\n",lr,sp,str);
+    kprintf("Abort:\t\t%p\t   %p\t%s\n",lr,sp,str);
     
     asm("mrs %[result], lr_fiq" : [result] "=r" (lr));
     asm("mrs %[result], sp_fiq" : [result] "=r" (sp));
     asm("mrs %[result], spsr_fiq" : [result] "=r" (spsr));
     bitsToLetters(spsr);    
-    kprintf("FIQ:\t\t%p\t\t   %p\t%s\n",lr,sp,str);
+    kprintf("FIQ:\t\t%p\t   %p\t%s\n",lr,sp,str);
     
     asm("mrs %[result], lr_irq" : [result] "=r" (lr));
     asm("mrs %[result], sp_irq" : [result] "=r" (sp));
     asm("mrs %[result], spsr_irq" : [result] "=r" (spsr));
     bitsToLetters(spsr);   
-    kprintf("IRQ:\t\t%p\t\t   %p\t%s\n",lr,sp,str);
+    kprintf("IRQ:\t\t%p\t   %p\t%s\n",lr,sp,str);
     
     asm("mrs %[result], lr_und" : [result] "=r" (lr));
     asm("mrs %[result], sp_und" : [result] "=r" (sp));
     asm("mrs %[result], spsr_und" : [result] "=r" (spsr));
     bitsToLetters(spsr);   
-    kprintf("Undefined:\t%p\t\t   %p\t%s\n",lr,sp,str);
+    kprintf("Undefined:\t%p\t   %p\t%s\n",lr,sp,str);
 }
 
 
 void reg_snapshot_print(char * exc_type, const volatile struct regStack * const regs){
-    int r0 = regs->r0;
-    int r1 = regs->r1;
-    int r2 = regs->r2;
-    int r3 = regs->r3;
-    int r4 = regs->r4;
-    int r5 = regs->r5;
-    int r6 = regs->r6;
-    int r7 = regs->r7;
-    int r8 = regs->r8;
-    int r9 = regs->r9;
-    int r10 = regs->r10;
-    int r11 = regs->r11;
-    int r12 = regs->r12;
     int SP = 0;
-    int LR = regs->lr;
     int PC = 0;
-    kprintf("\n>>>> Registerschnappschuss (%s) <<<<\nR0: %p\t\tR8: %p\nR1: %p\tR9: %p\nR2: %p\tR10: %p\nR3: %p\tR11: %p\nR4: %p\tR12: %p\nR5: %p\t\tSP: %p\nR6: %p\tLR: %p\nR7: %p\t\tPC: %p\n\n",exc_type,r0,r8,r1,r9,r2,r10,r3,r11,r4,r12,r5,SP,r6,LR,r7,PC);
+    kprintf("\n>>>> Registerschnappschuss (%s) <<<<\nR0: %p\t\tR8: %p\nR1: %p\tR9: %p\nR2: %p\tR10: %p\nR3: %p\tR11: %p\nR4: %p\tR12: %p\nR5: %p\t\tSP: %p\nR6: %p\tLR: %p\nR7: %p\t\tPC: %p\n\n",exc_type,regs->r0,regs->r8,regs->r1,regs->r9,regs->r2,regs->r10,regs->r3,regs->r11,regs->r4,regs->r12,regs->r5,SP,regs->r6,regs->lr,regs->r7,PC);
 }
 
 void SPSR_print(char * exc_type, unsigned int spsr){
@@ -196,14 +256,20 @@ void prefetch_abort_handler(unsigned int *p) {
 void data_abort_handler(unsigned int *p) {
     const volatile struct regStack * const regs = (struct regStack *) p;
     kprintf("\n###########################################################################\nData Abort at Adresse 0x000080e0\n");
+    da_report();
     reg_snapshot_print("Data Abort",regs);
-
+    while(1);
 }
 void irq_handler(unsigned int *p) {
     const volatile struct regStack * const regs = (struct regStack *) p;
     kprintf("\n###########################################################################\nIRQ at Adresse 0x000080e0\n");
-    reg_snapshot_print("IRQ",regs);
-//     while(1);
+    if(IRQ_Debug){
+        reg_snapshot_print("IRQ",regs);
+        set_IRQ_DEBUG(0);
+    }
+    if(lt->LTC & (1<<31))
+        clear_timer();
+    while(1);
 }
 void fiq_handler(unsigned int *p) {
     const volatile struct regStack * const regs = (struct regStack *) p;

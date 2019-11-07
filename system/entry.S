@@ -1,6 +1,17 @@
 .section .init
 .global _start
-.global execute
+
+.equ    STACK_SIZE, 512
+.equ    STACK_BASE, 0xF0000
+
+.equ    PSR_USR, 0X10
+.equ    PSR_FIQ, 0x11
+.equ    PSR_IRQ, 0x12
+.equ    PSR_SVC, 0x13
+.equ    PSR_ABT, 0x17
+.equ    PSR_UND, 0x1b
+.equ    PSR_SYS, 0x1f
+
 _start:
 	/* Erkennen ob Hypervisor Mode aktiv */
 	mrs r0, cpsr
@@ -32,10 +43,10 @@ _bsprak:
 	 * gesetzt, schadet aber auch nicht
 	 */
 
-
+    
 	ldr	sp,=0x20000
 	mrc p15, 0, r0, c0, c0, 5
-
+    bl  init_int
     ldr r0, =ivt
     mcr   p15,0,r0,c12,c0,0
 
@@ -71,5 +82,34 @@ _exitHyper:
 	msr spsr_hyp, r0
 	eret
 	
+/* initialize interrupts handlers*/
+init_int:
+    mov    sp, #STACK_BASE
+    mov    r0, #STACK_BASE
+    mov    r1, #STACK_SIZE
 
+    cps    PSR_FIQ
+    add    r0,r0,r1
+    mov    sp, r0
+    
+    cps    PSR_IRQ
+    add    r0,r0,r1
+    mov    sp, r0
+    
+    cps    PSR_SYS
+    add    r0,r0,r1
+    mov    sp, r0
+    
+    cps    PSR_UND
+    add    r0,r0,r1
+    mov    sp, r0
+    
+    cps    PSR_ABT
+    add    r0,r0,r1
+    mov    sp, r0
+    
+    cps    PSR_SVC
+    mov pc, lr
+
+    
 	
