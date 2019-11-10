@@ -3,6 +3,7 @@
 // #include <led.h>
 #include <uart.h>
 #include <timer.h>
+#include <regcheck.h>
 
 extern int cause_data_abort();
 
@@ -94,12 +95,14 @@ void interrupt_check(char input){
     if(input == 'i'){
         kprintf("%c is pressed !! one more button to activate the interrupt \n\n", input);
         asm("cpsie i");
-        setTime(999999999);
+        setTime(99999999);
         timer_en_irq();
     }
-    if(input == 's')
+    if(input == 's'){
+        setTime(99999999);
+        timer_en_irq();
         asm("SWI 0");
-    
+    }
     if(input == 'u'){
 //         kprintf("##################################\nundefined interrupt should be released \n\n");
 
@@ -114,6 +117,10 @@ void interrupt_check(char input){
     if(input == 'f'){
         kprintf("%c is pressed !! one more button to activate the interrupt \n\n", input);
         cause_FIQ();
+    }
+
+    if(input == 'c'){
+        register_checker();
     }
 
 //     kprintf("back to the game\n");

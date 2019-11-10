@@ -40,8 +40,10 @@ OBJ = system/entry.o
 OBJ += system/start.o
 OBJ += system/interrupts_handler.o
 OBJ += system/ivt.o
+OBJ += system/regcheck_asm.o
 OBJ += system/routine.o
 OBJ += system/timer.o
+OBJ += system/regcheck.o
 
 
 # Driver

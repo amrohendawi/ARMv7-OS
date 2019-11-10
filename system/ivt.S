@@ -73,8 +73,8 @@ not_used:
 irq:
 /*     ldr	sp,=0x70000 */
     sub     lr, lr, #8
-    stm     sp,{r0-r12, lr}
-    mov    r0, sp
+    stm     sp,{r0-r12, lr,r15}
+    mov     r0, sp
     bl      irq_handler
     ldm     sp,{r0-r12,lr}^
     movs         pc, lr

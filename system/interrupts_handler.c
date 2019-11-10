@@ -53,80 +53,84 @@ struct lt_struct {
     unsigned int LT_IRQ;
 };
 
+
+unsigned int spsr_aktuell;
+unsigned int cpsr_aktuell;
+
+
 void da_report(){
     unsigned int DFSR=0,DFAR=0;
     asm("MRC p15, 0, %[result], c5, c0, 0" : [result] "=r" (DFSR));
     asm("MRC p15, 0, %[result], c6, c0, 0" : [result] "=r" (DFAR));
     
     kprintf("Zugriff: lesend auf Adresse %p\n",DFAR);
-//     kprintf("DFSR : %x\n",DFSR);
     switch(DFSR & 31){
         case 0b00000:
-            kprintf("Fehler: No function, reset value\n");
+            kprintf("Fehler: No function, reset value\n\n");
         break;
         
         case 0b00001:
-            kprintf("Fehler: Alignment fault\n");
+            kprintf("Fehler: Alignment fault\n\n");
         break;
         
         case 0b00010:
-            kprintf("Fehler:Debug event fault\n");
+            kprintf("Fehler:Debug event fault\n\n");
         break;
         
         case 0b00011:
-            kprintf("Fehler: Access Flag fault on Section\n");
+            kprintf("Fehler: Access Flag fault on Section\n\n");
         break;
         
         case 0b00100:
-            kprintf("Fehler: Cache maintenance operation fault[b]\n");
+            kprintf("Fehler: Cache maintenance operation fault[b]\n\n");
         break;
         
         case 0b00101:
-            kprintf("Fehler: Translation fault on Section\n");
+            kprintf("Fehler: Translation fault on Section\n\n");
         break;
         
         case 0b00110:
-            kprintf("Fehler: Access Flag fault on Page\n");
+            kprintf("Fehler: Access Flag fault on Page\n\n");
         break;
         
         case 0b00111:
-            kprintf("Fehler: Translation fault on Page\n");
+            kprintf("Fehler: Translation fault on Page\n\n");
         break;
         
         case 0b01000:
-            kprintf("Fehler: Precise External Abort\n");
+            kprintf("Fehler: Precise External Abort\n\n");
         break;
         
         case 0b01001:
-            kprintf("Fehler: Domain fault on Section\n");
+            kprintf("Fehler: Domain fault on Section\n\n");
         break;
         
         case 0b01010:
-            kprintf("Fehler: No function\n");
+            kprintf("Fehler: No function\n\n");
         break;
         
         case 0b01011:
-            kprintf("Fehler: Domain fault on Page\n");
+            kprintf("Fehler: Domain fault on Page\n\n");
         break;
         
         case 0b01100:
-            kprintf("Fehler: External abort on translation, first level\n");
+            kprintf("Fehler: External abort on translation, first level\n\n");
         break;
         
         case 0b01101:
-            kprintf("Fehler: Permission fault on Section\n");
+            kprintf("Fehler: Permission fault on Section\n\n");
         break;
         
         case 0b01110:
-            kprintf("Fehler: External abort on translation, second level\n");
+            kprintf("Fehler: External abort on translation, second level\n\n");
         break;
         
         case 0b01111:
-            kprintf("Fehler: Permission fault on Page\n");
+            kprintf("Fehler: Permission fault on Page\n\n");
         break;
         
         case 0b10110:
-            kprintf("Fehler: Imprecise External Abort\n");
+            kprintf("Fehler: Imprecise External Abort\n\n");
         break;
         
         case 0b10111:
@@ -146,7 +150,6 @@ void da_report(){
 
 
 
-
 void bitsToLetters(unsigned int bitstring){
     kmemset(str,10);
     
@@ -162,17 +165,19 @@ void bitsToLetters(unsigned int bitstring){
     str[9] = (bitstring & (1<< 5)) ? 'T' : '_';
 }
 
-void amr_print(unsigned int spsr1){
-    unsigned int cpsr=0,lr=0,sp=0,spsr=spsr1;
+
+void amr_print(){
+    unsigned int cpsr=0,lr=0,sp=0,spsr=0;
     asm("mrs %[result], cpsr" : [result] "=r" (cpsr));
     kprintf("\n>>> Aktuelle modusspezifische Register <<<\n\t\tLR\t\t   SP\t\t   SPSR\n");
     
     asm("mrs %[result], lr_usr" : [result] "=r" (lr));
     asm("mrs %[result], sp_usr" : [result] "=r" (sp));
-    kprintf("User/System:\t%p\t\t   %p\n",lr,sp);
+    kprintf("User/System:\t%p\t   %p\n",lr,sp);
     
     asm("mrs %[result], lr_svc" : [result] "=r" (lr));
     asm("mrs %[result], sp_svc" : [result] "=r" (sp));
+    asm("mrs %[result], spsr_svc" : [result] "=r" (spsr));
     bitsToLetters(spsr);
     kprintf("Supervisor:\t%p\t\t   %p\t%s\n",lr,sp,str);
     
@@ -192,7 +197,7 @@ void amr_print(unsigned int spsr1){
     asm("mrs %[result], sp_irq" : [result] "=r" (sp));
     asm("mrs %[result], spsr_irq" : [result] "=r" (spsr));
     bitsToLetters(spsr);   
-    kprintf("IRQ:\t\t%p\t   %p\t%s\n",lr,sp,str);
+    kprintf("IRQ:\t\t%p\t\t   %p\t%s\n",lr,sp,str);
     
     asm("mrs %[result], lr_und" : [result] "=r" (lr));
     asm("mrs %[result], sp_und" : [result] "=r" (sp));
@@ -208,73 +213,71 @@ void reg_snapshot_print(char * exc_type, const volatile struct regStack * const 
     kprintf("\n>>>> Registerschnappschuss (%s) <<<<\nR0: %p\t\tR8: %p\nR1: %p\tR9: %p\nR2: %p\tR10: %p\nR3: %p\tR11: %p\nR4: %p\tR12: %p\nR5: %p\t\tSP: %p\nR6: %p\tLR: %p\nR7: %p\t\tPC: %p\n\n",exc_type,regs->r0,regs->r8,regs->r1,regs->r9,regs->r2,regs->r10,regs->r3,regs->r11,regs->r4,regs->r12,regs->r5,SP,regs->r6,regs->lr,regs->r7,PC);
 }
 
-void SPSR_print(char * exc_type, unsigned int spsr){
-    unsigned int cpsr=0;
-    
-    asm("mrs %[result], cpsr" : [result] "=r" (cpsr));
-//     asm("mrs %[result], spsr_svc" : [result] "=r" (spsr));
+void SPSR_print(char * exc_type, unsigned int spsr, unsigned int cpsr){    
     bitsToLetters(cpsr);
     kprintf(">>> Aktuelle Statusregister (%s) <<<\n",exc_type);
     kprintf("CPSR: %s Abort \t\t (%p)\n",str,cpsr);
     bitsToLetters(spsr);
     kprintf("SPSR: %s Supervisor \t (%p)\n",str,spsr);
     
-    
-    //last section of report
-    
 }
 
 
-void reset_handler() {
-    kprintf("\n###########################################################################\nReset at Adresse 0x000080e0\n");
-//     reg_snapshot_print("Reset",0);
-    _start();
-}
-void undefined_instruction_handler(unsigned int *p) {
+
+void general_handler(unsigned int *p, char* type, int da_flag){
     const volatile struct regStack * const regs = (struct regStack *) p;
-    kprintf("\n###########################################################################\nUndefinied Instruction at Adresse %p\n", *p);
-    reg_snapshot_print("Undefined Instruction",regs);
-
-}
-void software_interrupt_handler(unsigned int *p, unsigned int sp, unsigned int spsr) {
-    const volatile struct regStack * const regs = (struct regStack *) p;
-    kprintf("sp %p : pc %p : spsr %p \n",sp,regs->pc,spsr);
-    bitsToLetters(spsr);
-    kprintf("\n###########################################################################\nSoftware Interrupt at Adresse %p\n",*p);
-
-    reg_snapshot_print("Software Interrupt",regs);
-    SPSR_print("IRQ",spsr);
-    amr_print(spsr);
-
-}
-void prefetch_abort_handler(unsigned int *p) {
-    const volatile struct regStack * const regs = (struct regStack *) p;
-    kprintf("\n###########################################################################\nPrefetch Abort at Adresse 0x000080e0\n");
-    reg_snapshot_print("Prefetch Abort",regs);
-
-}
-void data_abort_handler(unsigned int *p) {
-    const volatile struct regStack * const regs = (struct regStack *) p;
-    kprintf("\n###########################################################################\nData Abort at Adresse 0x000080e0\n");
-    da_report();
-    reg_snapshot_print("Data Abort",regs);
-    while(1);
-}
-void irq_handler(unsigned int *p) {
-    const volatile struct regStack * const regs = (struct regStack *) p;
-    kprintf("\n###########################################################################\nIRQ at Adresse 0x000080e0\n");
+    kprintf("\n###########################################################################\n%s at Adresse %p\n",type,regs->pc);
+    if(da_flag)
+        da_report();
     if(IRQ_Debug){
         reg_snapshot_print("IRQ",regs);
         set_IRQ_DEBUG(0);
     }
+    asm("mrs %[result], cpsr" : [result] "=r" (cpsr_aktuell));
+    asm("mrs %[result], spsr" : [result] "=r" (spsr_aktuell));
+    SPSR_print(type, spsr_aktuell,cpsr_aktuell);
+    amr_print();
+    kprintf("\nSystem angehalten\n");
     if(lt->LTC & (1<<31))
         clear_timer();
-    while(1);
+//     while(1);
+    
 }
+
+
+
+void reset_handler(unsigned int *p) {
+    general_handler(p,"Reset",0);
+    _start();
+}
+
+void undefined_instruction_handler(unsigned int *p) {
+    general_handler(p,"Undefined Instruction",0);
+    resetTimer();
+}
+
+void software_interrupt_handler(unsigned int *p) {
+    general_handler(p,"Software Interrupt",0);
+}
+
+void prefetch_abort_handler(unsigned int *p) {
+    general_handler(p,"Prefetch Abort",0);
+}
+
+void data_abort_handler(unsigned int *p) {
+    general_handler(p,"Data abort",1);
+    resetTimer();
+}
+
+void irq_handler(unsigned int *p) {
+    general_handler(p,"IRQ",0);
+    resetTimer();
+//     lt->LTC &= ~(1<<29);             // interrupt disable
+
+}
+
 void fiq_handler(unsigned int *p) {
-    const volatile struct regStack * const regs = (struct regStack *) p;
-    kprintf("\n###########################################################################\nFIQ at Adresse 0x000080e0\n");
-    reg_snapshot_print("FIQ",regs);
+    general_handler(p,"FIQ",0);
 }
 
 

@@ -52,6 +52,6 @@
 static volatile struct uart * const _uart = (struct uart *)UART_BASE;
 
 
-void sendChar(char c);
+void sendChar(char inupt);
 char recvChar(void);
 #endif

@@ -1,5 +1,3 @@
-// #include <kprintf.h>
-// #include <interrupts_handler.h>
 #define FLAG_CLEAR (1<<31)
 #define RELOAD (1<<30)
 #include <timer.h>
@@ -17,13 +15,22 @@ struct lt_struct {
 // unsigned int volatile  lir = (unsigned int ) LIR_BASE;
 
 void timer_en_irq(){
-    lt->LTC |= (1<<29);             // interrupt enable
-    lt->LTC |= (1<<28);             // timer enable
+    lt->LTC |= INT_EN;             // interrupt enable
+    lt->LTC |= TIMER_EN;             // timer enable
     lt->LIR &= ~(0b111);               // set first 3 bits to 0 --> route IRQ to Core 0
 }
 
+unsigned int everytime = 0;
+
 void setTime(int time){
-    lt->LTC |= (time & 0xFFFFFFF);              // max int = 268435455
+    everytime = time;
+    lt->LTC |= (time & RELOAD_VALUE);              // max int = 268435455
+}
+
+void resetTimer(){
+    lt->LT_IRQ |= (1<<31);
+    lt->LT_IRQ |= (1<<30);
+    lt->LT_IRQ |= (everytime & RELOAD_VALUE);
 }
 
 void clear_timer(){

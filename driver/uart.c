@@ -28,15 +28,16 @@ struct uart {
     
 };
 
-void sendChar(char c){
+
+void sendChar(char input){
     while (_uart->FR & TXFF);
-    _uart->DR = c;
+    _uart->DR = input;
 }
 
 char recvChar(void){
+    
     while (_uart->FR & RXFE);
-    char input = _uart->DR;
-
+    char input = (char) _uart->DR;
     return input;
 }
 
