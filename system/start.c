@@ -10,8 +10,9 @@ void start_kernel(void)
 
 	while(1){
         char input = recvChar();
-        sendChar(input);
+//         sendChar(input);
         interrupt_check(input);
+        while(0);
     }
 }
 

@@ -86,40 +86,38 @@ void cause_FIQ(){
 
 
 void interrupt_check(char input){
-    
     kprintf("char %c | string %s | hexa %x | int %i | unint %u | pointer %p | %% | undefined %blabla\n\n",input,input,input,input,input,input,"not gonna be printed");
     
     if(input == 'd')
         set_IRQ_DEBUG(1);
     
-    if(input == 'i'){
-        kprintf("%c is pressed !! one more button to activate the interrupt \n\n", input);
+    else if(input == 'i'){
+        kprintf("%c is pressed !! IRQ should be released \n\n", input);
         asm("cpsie i");
         setTime(99999999);
         timer_en_irq();
+        kprintf("IRQ handler done \n");
     }
-    if(input == 's'){
+    else if(input == 's'){
         setTime(99999999);
         timer_en_irq();
         asm("SWI 0");
     }
-    if(input == 'u'){
-//         kprintf("##################################\nundefined interrupt should be released \n\n");
-
+    else if(input == 'u'){
         asm volatile (".word 0xf7f0a000");
     }
-    if(input == 'a'){
+    else if(input == 'a'){
         kprintf("##################################\ndata abort interrupt should be released \n\n");
 //         asm volatile ("mov  r0, #0x00000000\n\t"
 //                     "push {r0}");
         cause_data_abort();
    }
-    if(input == 'f'){
+    else if(input == 'f'){
         kprintf("%c is pressed !! one more button to activate the interrupt \n\n", input);
         cause_FIQ();
     }
 
-    if(input == 'c'){
+    else if(input == 'c'){
         register_checker();
     }
 

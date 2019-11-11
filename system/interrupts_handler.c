@@ -28,7 +28,7 @@ struct regStack{
   unsigned int r11;
   unsigned int r12;
   unsigned int lr;
-  unsigned int pc;
+//   unsigned int pc;
 };
 
 
@@ -185,13 +185,13 @@ void amr_print(){
     asm("mrs %[result], sp_abt" : [result] "=r" (sp));
     asm("mrs %[result], spsr_abt" : [result] "=r" (spsr));
     bitsToLetters(spsr);    
-    kprintf("Abort:\t\t%p\t   %p\t%s\n",lr,sp,str);
+    kprintf("Abort:\t\t%p\t\t   %p\t%s\n",lr,sp,str);
     
     asm("mrs %[result], lr_fiq" : [result] "=r" (lr));
     asm("mrs %[result], sp_fiq" : [result] "=r" (sp));
     asm("mrs %[result], spsr_fiq" : [result] "=r" (spsr));
     bitsToLetters(spsr);    
-    kprintf("FIQ:\t\t%p\t   %p\t%s\n",lr,sp,str);
+    kprintf("FIQ:\t\t%p\t\t   %p\t%s\n",lr,sp,str);
     
     asm("mrs %[result], lr_irq" : [result] "=r" (lr));
     asm("mrs %[result], sp_irq" : [result] "=r" (sp));
@@ -210,7 +210,7 @@ void amr_print(){
 void reg_snapshot_print(char * exc_type, const volatile struct regStack * const regs){
     int SP = 0;
     int PC = 0;
-    kprintf("\n>>>> Registerschnappschuss (%s) <<<<\nR0: %p\t\tR8: %p\nR1: %p\tR9: %p\nR2: %p\tR10: %p\nR3: %p\tR11: %p\nR4: %p\tR12: %p\nR5: %p\t\tSP: %p\nR6: %p\tLR: %p\nR7: %p\t\tPC: %p\n\n",exc_type,regs->r0,regs->r8,regs->r1,regs->r9,regs->r2,regs->r10,regs->r3,regs->r11,regs->r4,regs->r12,regs->r5,SP,regs->r6,regs->lr,regs->r7,PC);
+    kprintf("\n>>>> Registerschnappschuss (%s) <<<<\nR0: %p\tR8: %p\nR1: %p\tR9: %p\nR2: %p\tR10: %p\nR3: %p\tR11: %p\nR4: %p\tR12: %p\nR5: %p\t\tSP: %p\nR6: %p\t\tLR: %p\nR7: %p\t\tPC: %p\n\n",exc_type,regs->r0,regs->r8,regs->r1,regs->r9,regs->r2,regs->r10,regs->r3,regs->r11,regs->r4,regs->r12,regs->r5,SP,regs->r6,regs->lr,regs->r7,PC);
 }
 
 void SPSR_print(char * exc_type, unsigned int spsr, unsigned int cpsr){    
@@ -224,60 +224,56 @@ void SPSR_print(char * exc_type, unsigned int spsr, unsigned int cpsr){
 
 
 
-void general_handler(unsigned int *p, char* type, int da_flag){
+void general_handler(unsigned int *p, unsigned int pc, char* type, int da_flag){
     const volatile struct regStack * const regs = (struct regStack *) p;
-    kprintf("\n###########################################################################\n%s at Adresse %p\n",type,regs->pc);
+    kprintf("\n###########################################################################\n%s at Adresse %p\n",type,regs->lr);
     if(da_flag)
         da_report();
-    if(IRQ_Debug){
-        reg_snapshot_print("IRQ",regs);
-        set_IRQ_DEBUG(0);
-    }
+    reg_snapshot_print(type,regs);
+
+//     if(IRQ_Debug){
+//         reg_snapshot_print("IRQ",regs);
+//         set_IRQ_DEBUG(0);
+//     }
     asm("mrs %[result], cpsr" : [result] "=r" (cpsr_aktuell));
     asm("mrs %[result], spsr" : [result] "=r" (spsr_aktuell));
     SPSR_print(type, spsr_aktuell,cpsr_aktuell);
     amr_print();
     kprintf("\nSystem angehalten\n");
-    if(lt->LTC & (1<<31))
-        clear_timer();
-//     while(1);
+    lt->LT_IRQ |= (1<<31);
+    //     while(1);
     
 }
 
 
 
-void reset_handler(unsigned int *p) {
-    general_handler(p,"Reset",0);
+void reset_handler(unsigned int *p, unsigned int pc) {
+    general_handler(p,pc,"Reset",0);
     _start();
 }
 
-void undefined_instruction_handler(unsigned int *p) {
-    general_handler(p,"Undefined Instruction",0);
-    resetTimer();
+void undefined_instruction_handler(unsigned int *p, unsigned int pc) {
+    general_handler(p,pc,"Undefined Instruction",0);
 }
 
-void software_interrupt_handler(unsigned int *p) {
-    general_handler(p,"Software Interrupt",0);
+void software_interrupt_handler(unsigned int *p, unsigned int pc) {
+    general_handler(p,pc,"Software Interrupt",0);
 }
 
-void prefetch_abort_handler(unsigned int *p) {
-    general_handler(p,"Prefetch Abort",0);
+void prefetch_abort_handler(unsigned int *p, unsigned int pc) {
+    general_handler(p,pc,"Prefetch Abort",0);
 }
 
-void data_abort_handler(unsigned int *p) {
-    general_handler(p,"Data abort",1);
-    resetTimer();
+void data_abort_handler(unsigned int *p, unsigned int pc) {
+    general_handler(p,pc,"Data abort",1);
 }
 
-void irq_handler(unsigned int *p) {
-    general_handler(p,"IRQ",0);
-    resetTimer();
-//     lt->LTC &= ~(1<<29);             // interrupt disable
-
+void irq_handler(unsigned int *p, unsigned int pc) {
+    general_handler(p,pc,"IRQ",0);
 }
 
-void fiq_handler(unsigned int *p) {
-    general_handler(p,"FIQ",0);
+void fiq_handler(unsigned int *p, unsigned int pc) {
+    general_handler(p,pc,"FIQ",0);
 }
 
 

@@ -43,10 +43,11 @@ _bsprak:
 	 * gesetzt, schadet aber auch nicht
 	 */
 
-    
 	ldr	sp,=0x20000
 	mrc p15, 0, r0, c0, c0, 5
+	
     bl  init_int
+    
     ldr r0, =ivt
     mcr   p15,0,r0,c12,c0,0
 
@@ -110,6 +111,3 @@ init_int:
     
     cps    PSR_SVC
     mov pc, lr
-
-    
-	

@@ -24,72 +24,73 @@ _fiq:                   .word fiq
 
 
 reset:
-/*     ldr sp,=0x20000 */
 /*     bl yellow_on */
     b       reset_handler
 
 undefined_instruction:
-/*    ldr	sp,=0x30000*/
     sub     lr, lr, #4
-    stm     sp,{r0-r12, lr}^
-    mov    r0, sp
+     stm     sp,{r0-r12, lr}^
+    mov     r0, sp
+    mov     r1, r15
     bl      undefined_instruction_handler
-    ldm     sp,{r0-r12,lr}^
+    ldm     sp,{r0-r12, lr, r15}
     movs         pc, lr
     
 software_interrupt:
-/*     ldr	sp,=0x40000 */
     sub     lr, lr, #4
-    stm     sp,{r0-r12, lr,r15}
-    mrs     r0, sp_svc
-    mrs     r3, spsr_svc
+    stm     sp,{r0-r12, lr}^
+    mov     r0, sp
+    mov     r1, r15
     bl      software_interrupt_handler
-    ldm     sp,{r0-r12,lr}^
+    ldm     sp,{r0-r12,lr , r15}
     movs         pc, lr
 
 
     
 prefetch_abort:
-/*     ldr	sp,=0x50000 */
     sub     lr, lr, #4
-    stm     sp,{r0-r12, lr}
-    mov    r0, sp
+    stm     sp,{r0-r12, lr}^
+    mov     r0, sp
+    mov     r1, r15
     bl      prefetch_abort_handler
-    ldm     sp,{r0-r12,lr}^
+    ldm     sp,{r0-r12,lr}
     movs         pc, lr
     
 data_abort:
-/*     ldr	sp,=0x60000 */
     sub     lr, lr, #8
-    stm     sp,{r0-r12, lr}
-    mov    r0, sp
+    stm     sp,{r0-r12, lr}^
+    mov     r0, sp
+    mov     r1, r15
     bl      data_abort_handler
-    ldm     sp,{r0-r12,lr}^
+    ldm     sp,{r0-r12,lr}
     movs         pc, lr
+    
 /* leer*/
 not_used:
 
     
 irq:
-/*     ldr	sp,=0x70000 */
     sub     lr, lr, #8
-    stm     sp,{r0-r12, lr,r15}
+    stm     sp,{r0-r12, lr}^
     mov     r0, sp
+    mov     r1, r15
     bl      irq_handler
-    ldm     sp,{r0-r12,lr}^
+    ldm     sp,{r0-r12, lr}
     movs         pc, lr
 
 fiq:
-/*     ldr	sp,=0x80000 */
     sub     lr, lr, #8
-    stm     sp,{r0-r12, lr}
-    mov    r0, sp
+    stm     sp,{r0-r12, lr}^
+    mov     r0, sp
+    mov     r1, r15
     bl      fiq_handler
-    ldm     sp,{r0-r12,lr}^
+    ldm     sp,{r0-r12,lr}
     movs         pc, lr
     
 cause_data_abort:
-    mov r0, #0xFFFFFFFF   
-    push {r0} 
-    pop  {pc}
-
+    mrc p15,0,r1,c1,c0,0
+    orr r1, #2
+    mcr p15,0,r1,c1,c0,0
+    mov r1,#0x1
+    ldr r1,[r1]
+    mov pc,lr

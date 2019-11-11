@@ -35,9 +35,8 @@ void sendChar(char input){
 }
 
 char recvChar(void){
-    
     while (_uart->FR & RXFE);
-    char input = (char) _uart->DR;
+    char input = _uart->DR;
     return input;
 }
 

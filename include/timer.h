@@ -6,7 +6,7 @@
 #define INT_EN (1<<29)
 #define TIMER_EN (1<<28)
 #define RELOAD_VALUE (0xFFFFFFF)
-
+#define CORE_0 (0b111)
 
 static volatile struct lt_struct * const lt = (struct lt_struct *)LTC_BASE;
 
