@@ -1,13 +1,53 @@
-#ifndef _IVT_H_
-#define _IVT_H_
 #include <kprintf.h>
 #include <uart.h>
 #include <interrupts_handler.h>
 #include <timer.h>
+#define timer_guilty (lt->LTC & (1<<31))
+#define R_W    (1<<11)
+
+#define USR    (0x10)
+#define FIQ    (0x11)
+#define IRQ    (0x12)
+#define SVC    (0x13)
+#define ABT    (0x17)
+#define UND    (0x1B)
+#define SYS    (0x1F)
+#define FIRST5 (0x1F)
+#define N_BIT   (1<< 31)
+#define Z_BIT   (1<< 30)
+#define C_BIT   (1<< 29)
+#define V_BIT   (1<< 28)
+#define E_BIT   (1<< 9)
+#define I_BIT   (1<< 7)
+#define F_BIT   (1<< 6)
+#define T_BIT   (1<< 5)
 
 extern int _start();
+
+extern unsigned int get_lr_usr();
+extern unsigned int get_lr_svc();
+extern unsigned int get_lr_abt();
+extern unsigned int get_lr_fiq();
+extern unsigned int get_lr_irq();
+extern unsigned int get_lr_und();
+
+extern unsigned int get_sp_usr();
+extern unsigned int get_sp_svc();
+extern unsigned int get_sp_abt();
+extern unsigned int get_sp_fiq();
+extern unsigned int get_sp_irq();
+extern unsigned int get_sp_und();
+
+extern unsigned int get_spsr_svc();
+extern unsigned int get_spsr_abt();
+extern unsigned int get_spsr_fiq();
+extern unsigned int get_spsr_irq();
+extern unsigned int get_spsr_und();
+
+
 char str[10];
 int IRQ_Debug = 0;
+
 
 void set_IRQ_DEBUG(int value){
     IRQ_Debug = value;
@@ -28,7 +68,6 @@ struct regStack{
   unsigned int r11;
   unsigned int r12;
   unsigned int lr;
-//   unsigned int pc;
 };
 
 
@@ -54,16 +93,19 @@ struct lt_struct {
 };
 
 
-unsigned int spsr_aktuell;
-unsigned int cpsr_aktuell;
 
+
+char * rORw(unsigned int DFSR){
+    return (DFSR & R_W) ? "lesend" : "schreibend";
+}
 
 void da_report(){
-    unsigned int DFSR=0,DFAR=0;
+    unsigned int DFSR=0;
     asm("MRC p15, 0, %[result], c5, c0, 0" : [result] "=r" (DFSR));
+    unsigned int DFAR=0;
     asm("MRC p15, 0, %[result], c6, c0, 0" : [result] "=r" (DFAR));
     
-    kprintf("Zugriff: lesend auf Adresse %p\n",DFAR);
+    kprintf("Zugriff: %s auf Adresse %08p\n",rORw(DFSR),DFAR);
     switch(DFSR & 31){
         case 0b00000:
             kprintf("Fehler: No function, reset value\n\n");
@@ -138,12 +180,12 @@ void da_report(){
         break;
         
         default:
-            if((DFSR & 28) == 0b100)
+            if((DFSR & 28) == 0b10000)
                 kprintf("Fehler: No function\n");
-            else if((DFSR & 30) == 0b1010)
+            else if((DFSR & 30) == 0b10100)
                 kprintf("Fehler: No function\n");
-//             else if((DFSR & 24) == 0b11)
-//                 kprintf("Fehler: No function\n");
+            else if((DFSR & 24) == 0b11000)
+                kprintf("Fehler: No function\n");
         break;
     }
 }
@@ -153,130 +195,149 @@ void da_report(){
 void bitsToLetters(unsigned int bitstring){
     kmemset(str,10);
     
-    str[0] = (bitstring & (1<< 31)) ? 'N' : '_';
-    str[1] = (bitstring & (1<< 30)) ? 'Z' : '_';
-    str[2] = (bitstring & (1<< 29)) ? 'C' : '_';
-    str[3] = (bitstring & (1<< 28)) ? 'V' : '_';
+    str[0] = (bitstring & N_BIT) ? 'N' : '_';
+    str[1] = (bitstring & Z_BIT) ? 'Z' : '_';
+    str[2] = (bitstring & C_BIT) ? 'C' : '_';
+    str[3] = (bitstring & V_BIT) ? 'V' : '_';
     str[4] = ' ';
-    str[5] = (bitstring & (1<< 9)) ? 'E' : '_';
+    str[5] = (bitstring & E_BIT) ? 'E' : '_';
     str[6] = ' ';
-    str[7] = (bitstring & (1<< 7)) ? 'I' : '_';
-    str[8] = (bitstring & (1<< 6)) ? 'F' : '_';
-    str[9] = (bitstring & (1<< 5)) ? 'T' : '_';
+    str[7] = (bitstring & I_BIT) ? 'I' : '_';
+    str[8] = (bitstring & F_BIT) ? 'F' : '_';
+    str[9] = (bitstring & T_BIT) ? 'T' : '_';
 }
 
+char * modusbits(unsigned int spsr){
+    switch(spsr & FIRST5){
+        case USR:
+            return "User";
+        case FIQ:
+            return "FIQ";
+        case IRQ:
+            return "IRQ";
+        case SVC:
+            return "Supervisor";
+        case ABT:
+            return "Abort";
+        case UND:
+            return "Undefined";
+        case SYS:
+            return "System";
+        default:
+            return "Unknown Mode";
+    }
+}
+
+
+
+void reg_snapshot_print(char * exc_type, unsigned int pc, const volatile struct regStack * const regs){
+    unsigned SP = 0;
+    asm("mov %[result], sp" : [result] "=r" (SP));
+    kprintf("\n>>>> Registerschnappschuss (%s) <<<<\nR0:  %08p  R8:  %08p\nR1:  %08p  R9:  %08p\nR2:  %08p  R10: %08p\nR3:  %08p  R11: %08p\nR4:  %08p  R12: %08p\nR5:  %08p  SP:  %08p\nR6:  %08p  LR:  %08p\nR7:  %08p  PC:  %08p\n\n",exc_type,regs->r0,regs->r8,regs->r1,regs->r9,regs->r2,regs->r10,regs->r3,regs->r11,regs->r4,regs->r12,regs->r5,SP,regs->r6,regs->lr,regs->r7,pc);
+}
+
+void SPSR_print(char * exc_type){ 
+    unsigned int cpsr=0,spsr=0;
+    kprintf(">>> Aktuelle Statusregister (%s) <<<\n",exc_type);
+    
+    asm("mrs %[result], cpsr" : [result] "=r" (cpsr));
+    bitsToLetters(cpsr);
+    kprintf("CPSR: %12s %12s(%08p)\n",str,modusbits(cpsr),cpsr);
+    
+    asm("mrs %[result], spsr" : [result] "=r" (spsr));
+    bitsToLetters(spsr);
+    kprintf("SPSR: %12s %12s(%08p)\n",str,modusbits(spsr),spsr);
+    
+}
 
 void amr_print(){
-    unsigned int cpsr=0,lr=0,sp=0,spsr=0;
+    unsigned int cpsr=0;
+
     asm("mrs %[result], cpsr" : [result] "=r" (cpsr));
-    kprintf("\n>>> Aktuelle modusspezifische Register <<<\n\t\tLR\t\t   SP\t\t   SPSR\n");
+    kprintf("\n>>> Aktuelle modusspezifische Register <<<\n\t\t%12s%12s  SPSR\n","LR","SP");
+
+    kprintf("User/System:\t%08p  %08p\n",get_lr_usr(),get_sp_usr());
+
+    bitsToLetters(get_spsr_svc());
+    kprintf("Supervisor:\t%08p  %08p\t%12s  %12s  (%8p)\n",get_lr_svc(),get_sp_svc(),str,modusbits(get_spsr_svc()),get_spsr_svc());
     
-    asm("mrs %[result], lr_usr" : [result] "=r" (lr));
-    asm("mrs %[result], sp_usr" : [result] "=r" (sp));
-    kprintf("User/System:\t%p\t   %p\n",lr,sp);
     
-    asm("mrs %[result], lr_svc" : [result] "=r" (lr));
-    asm("mrs %[result], sp_svc" : [result] "=r" (sp));
-    asm("mrs %[result], spsr_svc" : [result] "=r" (spsr));
-    bitsToLetters(spsr);
-    kprintf("Supervisor:\t%p\t\t   %p\t%s\n",lr,sp,str);
+    bitsToLetters(get_spsr_abt()); 
+    kprintf("Abort:\t\t%08p  %08p\t%12s  %12s  (%8p)\n",get_lr_abt(),get_sp_abt(),str,modusbits(get_spsr_abt()),get_spsr_abt());
+
+    bitsToLetters(get_spsr_fiq());    
+    kprintf("FIQ:\t\t%08p  %08p\t%12s  %12s  (%8p)\n",get_lr_fiq(),get_sp_fiq(),str,modusbits(get_spsr_fiq()),get_spsr_fiq());
     
-    asm("mrs %[result], lr_abt" : [result] "=r" (lr));
-    asm("mrs %[result], sp_abt" : [result] "=r" (sp));
-    asm("mrs %[result], spsr_abt" : [result] "=r" (spsr));
-    bitsToLetters(spsr);    
-    kprintf("Abort:\t\t%p\t\t   %p\t%s\n",lr,sp,str);
+    bitsToLetters(get_spsr_irq());   
+    kprintf("IRQ:\t\t%08p  %08p\t%12s  %12s  (%8p)\n",get_lr_irq(),get_sp_irq(),str,modusbits(get_spsr_irq()),get_spsr_irq());
     
-    asm("mrs %[result], lr_fiq" : [result] "=r" (lr));
-    asm("mrs %[result], sp_fiq" : [result] "=r" (sp));
-    asm("mrs %[result], spsr_fiq" : [result] "=r" (spsr));
-    bitsToLetters(spsr);    
-    kprintf("FIQ:\t\t%p\t\t   %p\t%s\n",lr,sp,str);
-    
-    asm("mrs %[result], lr_irq" : [result] "=r" (lr));
-    asm("mrs %[result], sp_irq" : [result] "=r" (sp));
-    asm("mrs %[result], spsr_irq" : [result] "=r" (spsr));
-    bitsToLetters(spsr);   
-    kprintf("IRQ:\t\t%p\t\t   %p\t%s\n",lr,sp,str);
-    
-    asm("mrs %[result], lr_und" : [result] "=r" (lr));
-    asm("mrs %[result], sp_und" : [result] "=r" (sp));
-    asm("mrs %[result], spsr_und" : [result] "=r" (spsr));
-    bitsToLetters(spsr);   
-    kprintf("Undefined:\t%p\t   %p\t%s\n",lr,sp,str);
+    bitsToLetters(get_spsr_und());   
+    kprintf("Undefined:\t%8p  %8p\t%12s  %12s  (%8p)\n",get_lr_und(),get_sp_und(),str,modusbits(get_spsr_und()),get_spsr_und());
 }
 
 
-void reg_snapshot_print(char * exc_type, const volatile struct regStack * const regs){
-    int SP = 0;
-    int PC = 0;
-    kprintf("\n>>>> Registerschnappschuss (%s) <<<<\nR0: %p\tR8: %p\nR1: %p\tR9: %p\nR2: %p\tR10: %p\nR3: %p\tR11: %p\nR4: %p\tR12: %p\nR5: %p\t\tSP: %p\nR6: %p\t\tLR: %p\nR7: %p\t\tPC: %p\n\n",exc_type,regs->r0,regs->r8,regs->r1,regs->r9,regs->r2,regs->r10,regs->r3,regs->r11,regs->r4,regs->r12,regs->r5,SP,regs->r6,regs->lr,regs->r7,PC);
-}
-
-void SPSR_print(char * exc_type, unsigned int spsr, unsigned int cpsr){    
-    bitsToLetters(cpsr);
-    kprintf(">>> Aktuelle Statusregister (%s) <<<\n",exc_type);
-    kprintf("CPSR: %s Abort \t\t (%p)\n",str,cpsr);
-    bitsToLetters(spsr);
-    kprintf("SPSR: %s Supervisor \t (%p)\n",str,spsr);
-    
-}
-
-
-
-void general_handler(unsigned int *p, unsigned int pc, char* type, int da_flag){
+void general_handler(unsigned int *p, char* type, int da_flag, unsigned int pc){
     const volatile struct regStack * const regs = (struct regStack *) p;
-    kprintf("\n###########################################################################\n%s at Adresse %p\n",type,regs->lr);
+    kprintf("\n###########################################################################\n%s at Adresse %08p\n",type,regs->lr);
+    
     if(da_flag)
         da_report();
-    reg_snapshot_print(type,regs);
+    
+    if( type[0] != 'I' || (IRQ_Debug && type[0] == 'I')){
+        reg_snapshot_print(type,pc,regs);
+    }
 
-//     if(IRQ_Debug){
-//         reg_snapshot_print("IRQ",regs);
-//         set_IRQ_DEBUG(0);
-//     }
-    asm("mrs %[result], cpsr" : [result] "=r" (cpsr_aktuell));
-    asm("mrs %[result], spsr" : [result] "=r" (spsr_aktuell));
-    SPSR_print(type, spsr_aktuell,cpsr_aktuell);
+    SPSR_print(type);
     amr_print();
     kprintf("\nSystem angehalten\n");
-    lt->LT_IRQ |= (1<<31);
-    //     while(1);
-    
+    resetTimer();   
 }
 
 
 
+
+/*
+ ************************ Handlers Section **************************
+ */
+
 void reset_handler(unsigned int *p, unsigned int pc) {
-    general_handler(p,pc,"Reset",0);
+    general_handler(p,"Reset",0,pc);
     _start();
 }
 
 void undefined_instruction_handler(unsigned int *p, unsigned int pc) {
-    general_handler(p,pc,"Undefined Instruction",0);
+    general_handler(p,"Undefined Instruction",0,pc);
+    while(1);
 }
 
 void software_interrupt_handler(unsigned int *p, unsigned int pc) {
-    general_handler(p,pc,"Software Interrupt",0);
+    general_handler(p,"Software Interrupt",0,pc);
+    while(1);
 }
 
 void prefetch_abort_handler(unsigned int *p, unsigned int pc) {
-    general_handler(p,pc,"Prefetch Abort",0);
+    general_handler(p,"Prefetch Abort",0,pc);
 }
 
 void data_abort_handler(unsigned int *p, unsigned int pc) {
-    general_handler(p,pc,"Data abort",1);
+    general_handler(p,"Data abort",1,pc);
+    while(1);
 }
 
 void irq_handler(unsigned int *p, unsigned int pc) {
-    general_handler(p,pc,"IRQ",0);
+    if(timer_guilty){
+        kprintf("!\n");
+        resetTimer();
+    }
+    else if(IRQ_Debug){
+        general_handler(p,"IRQ",1,pc);
+        set_IRQ_DEBUG(0);
+    }else{
+        general_handler(p,"IRQ",1,pc);
+    }
 }
 
 void fiq_handler(unsigned int *p, unsigned int pc) {
-    general_handler(p,pc,"FIQ",0);
+    general_handler(p,"FIQ",0,pc);
 }
 
-
-
-
-#endif

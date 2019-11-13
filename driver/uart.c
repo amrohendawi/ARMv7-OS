@@ -1,8 +1,6 @@
 #define UART_BASE (0x7E201000 - 0x3F000000)
-#include <kprintf.h>
 #include <uart.h>
 #include <led.h>
-
 
 struct uart {
     unsigned int DR;
@@ -36,8 +34,7 @@ void sendChar(char input){
 
 char recvChar(void){
     while (_uart->FR & RXFE);
-    char input = _uart->DR;
-    return input;
+    return _uart->DR;
 }
 
 

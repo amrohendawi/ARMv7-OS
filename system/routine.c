@@ -1,11 +1,12 @@
 #include <kprintf.h>
 #include <interrupts_handler.h>
-// #include <led.h>
+#include <led.h>
 #include <uart.h>
 #include <timer.h>
 #include <regcheck.h>
 
 extern int cause_data_abort();
+int interactive_on = 0;
 
 struct uart {
     unsigned int DR;
@@ -31,6 +32,8 @@ struct uart {
     
 };
 
+
+
 struct interrupts_base {
     volatile unsigned int IRQ_basic_pending;
     volatile unsigned int IRQ_pending_1;
@@ -44,85 +47,77 @@ struct interrupts_base {
     volatile unsigned int disable_basic_IRQs;
 };
 
-void cause_IRQ(){
-        // enalbe IRQ
-        asm("cpsie i");
+void enable_uart_IRQ(){
         //warte bis Transmission fertig ist
         while(_uart->FR & BUSY);
         // enable uart_int interrupt
         _interrupts->enable_IRQs_2 |= (1<<25);        
-        // disable UART
-        _uart->CR &= ~(1);
-        //disable FIFO
-        _uart->LCRH &= ~(1<<4);
         // setzt RXIM bit auf 1 --> Receive interrupt mask is set
         _uart->IMSC |= (1<<4);
-        // UART enable
-        _uart->CR |= 1;
 }
 
 
 void cause_FIQ(){
-            // disable RIQ
+        // disable RIQ
         asm("cpsid i");
         // enable FIQ
         asm("cpsie f");
-        
         _interrupts->FIQ_control |= (1<<7);
         //warte bis Transmission fertig ist
         while(_uart->FR & BUSY);
-        // enable uart_int interrupt
-        _interrupts->enable_IRQs_2 |= (1<<25);        
-        // disable UART
-        _uart->CR &= ~(1);
-        //disable FIFO
-        _uart->LCRH &= ~(1<<4);
         // setzt RXIM bit auf 1 --> Receive interrupt mask is set
         _uart->IMSC |= (1<<4);
-        // UART enable
-        _uart->CR |= 1;
 }
 
 
+void activate_interactive(void){
+    interactive_on = 1;
+}
 
-void interrupt_check(char input){
-    kprintf("char %c | string %s | hexa %x | int %i | unint %u | pointer %p | %% | undefined %blabla\n\n",input,input,input,input,input,input,"not gonna be printed");
-    
-    if(input == 'd')
-        set_IRQ_DEBUG(1);
-    
-    else if(input == 'i'){
-        kprintf("%c is pressed !! IRQ should be released \n\n", input);
-        asm("cpsie i");
-        setTime(99999999);
-        timer_en_irq();
-        kprintf("IRQ handler done \n");
+void lazyOutput(char input){
+    for(int w=0;w<50;w++){
+        for(int i=0;i<59999;i++){
+            yellow_on();
+        }
+        sendChar(input);
     }
-    else if(input == 's'){
-        setTime(99999999);
-        timer_en_irq();
-        asm("SWI 0");
-    }
-    else if(input == 'u'){
-        asm volatile (".word 0xf7f0a000");
-    }
-    else if(input == 'a'){
-        kprintf("##################################\ndata abort interrupt should be released \n\n");
-//         asm volatile ("mov  r0, #0x00000000\n\t"
-//                     "push {r0}");
-        cause_data_abort();
-   }
-    else if(input == 'f'){
-        kprintf("%c is pressed !! one more button to activate the interrupt \n\n", input);
-        cause_FIQ();
+}
+
+
+void call_routine(char input){
+
+    switch(input){
+        case 'd':
+            set_IRQ_DEBUG(1);
+            break;
+        case 's':
+            asm("SWI 0");
+            break;
+        case 'u':
+            asm volatile ("UDF");
+            break;
+        case 'a':
+            cause_data_abort();
+            break;
+        case 'f':
+            cause_FIQ();
+            break;
+        case 'c':
+            register_checker();
+            break;
+            
+        case 'e':
+            kprintf("interactive under-program is activate\n");
+            activate_interactive();
+            break;     
+        default:
+            if(interactive_on){
+                lazyOutput(input);
+            }else{
+                sendChar(input);
+            }
     }
 
-    else if(input == 'c'){
-        register_checker();
-    }
 
-//     kprintf("back to the game\n");
-    
-//     return 0;
 }
 

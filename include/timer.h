@@ -14,5 +14,5 @@ void timer_en_irq();
 void setTime(int time);
 void resetTimer();
 void clear_timer();
-
+void start_timer_interrupt(int time);
 #endif

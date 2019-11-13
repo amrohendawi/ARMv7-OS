@@ -4,7 +4,7 @@
 #define NULL ((void *)-1)
 
 char buff[BUFF_SIZE], tmp[BUFF_SIZE];
-int i,j;
+int i,j,offset=0;
 
     
 // initializes a certain buffer with zeros
@@ -43,34 +43,36 @@ char* strcpy(char* dest, const char* src)
 }
 
 // converts a decimal number to hexadecimal and packs it in a buffer as a string
-void decToHexStr(int n, char *int_str, int pointer){
+void decToHexStr(unsigned int n, char *int_str, int pointer){
     char res[BUFF_SIZE];
-    for(int i=0;i<BUFF_SIZE;i++)
-        res[i]=0;
+    kmemset(res,BUFF_SIZE);
+    kmemset(int_str,BUFF_SIZE);
+    int j=0;
     
+    char hex[16] = "0123456789ABCDEF";
     int i=0;
     
-    while(n!=0){
-        int temp = n%16;
-        if(temp < 10)
-            res[i++] = temp + 48;
-        else
-            res[i++] = temp + 55;
-        
+    while(n>0){
+        res[i++] = hex[n%16];
         n /= 16;
     }
     i--;
-    kmemset(int_str,BUFF_SIZE);
-    int j=0;
+    
     if(pointer){
         j=2;
         int_str[0] = '0';
         int_str[1] = 'x';
     }
+    
+    while(offset - kstrlen(res) > 0){
+        int_str[j] = '0';
+        j++;offset--;
+    }
     while(i>=0){
         int_str[j] = res[i];
         j++;i--;
     }
+    offset = 0;
 }
 
 // converts int to a string and packs it in a buffer
@@ -81,20 +83,22 @@ void intToStr(int n, char *int_str){
     int j=0;
     kmemset(res,BUFF_SIZE);
     kmemset(int_str,BUFF_SIZE);
-
+    char dec[10] = "0123456789";
+    
     if(n<0){
         n *= (-1);
         int_str[j++] = '-';
     }
-    if(n >= 48 && n <= 57){
-        res[i++]=n;
-    }else{
-        while(n>0){
-            res[i++] = n%10+'0';
-            n/=10; 
-        }
+
+    while(n>0){
+        res[i++] = dec[n%10];
+        n/=10; 
     }
     i--;
+    while(offset - kstrlen(res) > 0){
+        int_str[j] = '0';
+        j++;offset--;
+    }    
     while(i>=0){
         int_str[j] = res[i];
         j++;i--;
@@ -119,6 +123,10 @@ void unintToStr(unsigned int n, char *int_str){
         }
     }
     i--;
+    while(offset - kstrlen(res) > 0){
+        int_str[j] = '0';
+        j++;offset--;
+    }    
     while(i>=0){
         int_str[j] = res[i];
         j++;i--;
@@ -146,6 +154,7 @@ int kprintf (char * str, ...)
         if(str[i] == '%')
         {
             i++;
+            switches:
             switch (str[i]) 
             {
                 case 'c': 
@@ -156,31 +165,40 @@ int kprintf (char * str, ...)
                     strcpy(tmp, va_arg( vl, void *));
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
+                    while(offset-kstrlen(tmp) > 0){
+                        buff[j] = ' ';
+                        j++;offset--;
+                    }
+                    offset = 0;
                 break;
                 
                 case 'x': 
-                    decToHexStr(va_arg(vl,int),tmp,0);
+                    decToHexStr(va_arg(vl,unsigned int),tmp,0);
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
+                    offset = 0;
                 break;
                 
                 case 'i': 
-                
                     intToStr(va_arg(vl,int),tmp);
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
+                    offset = 0;
                 break;
                 
                 case 'u':
                     unintToStr(va_arg(vl,unsigned int),tmp);
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
-                    break;
+                    offset = 0;
+                    break;                
+
                     
                 case 'p':
                     decToHexStr(va_arg(vl,int),tmp,1);
                     strcpy(&buff[j], tmp);
                     j += kstrlen(tmp);
+                    offset = 0;
                     break;
                     
                 case '%':
@@ -188,8 +206,17 @@ int kprintf (char * str, ...)
                     break;
                     
                 default:
-                    buff[j++] = '%';
-                    buff[j++] = str[i];
+                    if(str[i] >= 48 && str[i] <= 57){
+                        while(str[i] >=48 && str[i] <= 57){
+                            offset *= 10;
+                            offset += str[i] - 48;
+                            i++;
+                        }
+                        goto switches;
+                    }else{
+                        buff[j++] = '%';
+                        buff[j++] = str[i];
+                    }
                 break;
             }
         } 

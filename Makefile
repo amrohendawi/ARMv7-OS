@@ -44,6 +44,7 @@ OBJ += system/regcheck_asm.o
 OBJ += system/routine.o
 OBJ += system/timer.o
 OBJ += system/regcheck.o
+OBJ += system/modusTools.o
 
 
 # Driver
@@ -53,6 +54,8 @@ OBJ += driver/uart.o
 # Library
 OBJ += lib/kprintf.o
 OBJ += lib/kscanf.o
+OBJ += lib/FIFO.o
+
 
 
 # Falls die binäre Musterlösung benutzt wird bitte auskommentieren
