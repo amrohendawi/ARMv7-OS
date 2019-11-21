@@ -26,6 +26,29 @@ struct uart {
     
 };
 
+struct interrupts_base {
+    volatile unsigned int IRQ_basic_pending;
+    volatile unsigned int IRQ_pending_1;
+    volatile unsigned int IRQ_pending_2;
+    volatile unsigned int FIQ_control;
+    volatile unsigned int enable_IRQs_1;
+    volatile unsigned int enable_IRQs_2;
+    volatile unsigned int enable_basic_IRQs;
+    volatile unsigned int disable_IRQs_1;
+    volatile unsigned int disable_IRQs_2;
+    volatile unsigned int disable_basic_IRQs;
+};
+
+
+void enable_uart_IRQ(){
+        //warte bis Transmission fertig ist
+        while(_uart->FR & BUSY);
+        // enable uart_int interrupt
+        _interrupts->enable_IRQs_2 |= (1<<25);        
+        // setzt RXIM bit auf 1 --> Receive interrupt mask is set
+        _uart->IMSC |= (1<<4);
+}
+
 
 void sendChar(char input){
     while (_uart->FR & TXFF);

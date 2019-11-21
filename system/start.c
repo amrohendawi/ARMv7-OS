@@ -1,7 +1,6 @@
-#include <routine.h>
 #include <FIFO.h>
 #include <timer.h>
-
+#include <uart.h>
 
 void start_kernel(void)
 { 

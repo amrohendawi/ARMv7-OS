@@ -47,15 +47,6 @@ struct interrupts_base {
     volatile unsigned int disable_basic_IRQs;
 };
 
-void enable_uart_IRQ(){
-        //warte bis Transmission fertig ist
-        while(_uart->FR & BUSY);
-        // enable uart_int interrupt
-        _interrupts->enable_IRQs_2 |= (1<<25);        
-        // setzt RXIM bit auf 1 --> Receive interrupt mask is set
-        _uart->IMSC |= (1<<4);
-}
-
 
 void cause_FIQ(){
         // disable RIQ

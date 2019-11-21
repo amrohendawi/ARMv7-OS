@@ -1,6 +1,7 @@
 #ifndef UART_H
 #define UART_H
 #define UART_BASE (0x7E201000 - 0x3F000000)
+#define INTERRUPT_BASE (0x7E00B000 + 0x200 - 0x3F000000)
 
 /* flag register bits */
 #define RTXDIS	(1 << 13)
@@ -48,8 +49,10 @@
 #define RTIM		(1 << 6)
 #define RXIM		(1 << 4)
 
-
+static volatile struct interrupts_base * const _interrupts = (struct interrupts_base *)INTERRUPT_BASE;
 static volatile struct uart * const _uart = (struct uart *)UART_BASE;
+
+void enable_uart_IRQ();
 
 
 void sendChar(char inupt);

@@ -4,6 +4,8 @@
 #include <timer.h>
 #define timer_guilty (lt->LTC & (1<<31))
 #define R_W    (1<<11)
+#include <FIFO.h>
+#include <routine.h>
 
 #define USR    (0x10)
 #define FIQ    (0x11)
@@ -254,25 +256,25 @@ void amr_print(){
     unsigned int cpsr=0;
 
     asm("mrs %[result], cpsr" : [result] "=r" (cpsr));
-    kprintf("\n>>> Aktuelle modusspezifische Register <<<\n\t\t%12s%12s  SPSR\n","LR","SP");
+    kprintf("\n>>> Aktuelle modusspezifische Register <<<\n\t\t%s%12s\t\t  SPSR\n","LR","SP");
 
     kprintf("User/System:\t%08p  %08p\n",get_lr_usr(),get_sp_usr());
 
     bitsToLetters(get_spsr_svc());
-    kprintf("Supervisor:\t%08p  %08p\t%12s  %12s  (%8p)\n",get_lr_svc(),get_sp_svc(),str,modusbits(get_spsr_svc()),get_spsr_svc());
+    kprintf("Supervisor:\t%08p  %08p\t%s  %12s  (%08p)\n",get_lr_svc(),get_sp_svc(),str,modusbits(get_spsr_svc()),get_spsr_svc());
     
     
     bitsToLetters(get_spsr_abt()); 
-    kprintf("Abort:\t\t%08p  %08p\t%12s  %12s  (%8p)\n",get_lr_abt(),get_sp_abt(),str,modusbits(get_spsr_abt()),get_spsr_abt());
+    kprintf("Abort:\t\t%08p  %08p\t%s  %12s  (%08p)\n",get_lr_abt(),get_sp_abt(),str,modusbits(get_spsr_abt()),get_spsr_abt());
 
     bitsToLetters(get_spsr_fiq());    
-    kprintf("FIQ:\t\t%08p  %08p\t%12s  %12s  (%8p)\n",get_lr_fiq(),get_sp_fiq(),str,modusbits(get_spsr_fiq()),get_spsr_fiq());
+    kprintf("FIQ:\t\t%08p  %08p\t%s  %12s  (%08p)\n",get_lr_fiq(),get_sp_fiq(),str,modusbits(get_spsr_fiq()),get_spsr_fiq());
     
     bitsToLetters(get_spsr_irq());   
-    kprintf("IRQ:\t\t%08p  %08p\t%12s  %12s  (%8p)\n",get_lr_irq(),get_sp_irq(),str,modusbits(get_spsr_irq()),get_spsr_irq());
+    kprintf("IRQ:\t\t%08p  %08p\t%s  %12s  (%08p)\n",get_lr_irq(),get_sp_irq(),str,modusbits(get_spsr_irq()),get_spsr_irq());
     
     bitsToLetters(get_spsr_und());   
-    kprintf("Undefined:\t%8p  %8p\t%12s  %12s  (%8p)\n",get_lr_und(),get_sp_und(),str,modusbits(get_spsr_und()),get_spsr_und());
+    kprintf("Undefined:\t%08p  %08p\t%s  %12s  (%08p)\n",get_lr_und(),get_sp_und(),str,modusbits(get_spsr_und()),get_spsr_und());
 }
 
 
@@ -326,6 +328,9 @@ void data_abort_handler(unsigned int *p, unsigned int pc) {
 
 void irq_handler(unsigned int *p, unsigned int pc) {
     if(timer_guilty){
+        while(getLength() > 0){
+            call_routine(dequeue());
+        }
         kprintf("!\n");
         resetTimer();
     }
