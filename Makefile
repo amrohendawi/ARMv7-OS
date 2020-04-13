@@ -27,30 +27,28 @@
 #			   Arbeit zuhause einfach den Pfad eintragen
 
 
-# Binäre Lsg (falls verwendet)
-BIN_LSG =
-
 # Ab Aufgabe 4 auf true
-KERNEL_USER_SPLIT = false
+KERNEL_USER_SPLIT = true
 
 # Hier eure Dateien hinzufügen
 # System
 OBJ = system/entry.o
 OBJ += system/start.o
-OBJ += system/interrupts_handler.o
-OBJ += system/ivt.o
+OBJ += scheduler/scheduler.o
+
+OBJ += system/exceptions.o
 
 # Driver
 OBJ += driver/led.o
-OBJ += driver/uart.o
+# OBJ += example/syscall.o
 
-# Library
-OBJ += lib/kprintf.o
-OBJ += lib/kscanf.o
+OBJ += memory/mmu_assembly_funcs.o
+OBJ += memory/mmu.o
+OBJ += system/process.o
 
 # Falls die binäre Musterlösung benutzt wird bitte auskommentieren
 # und gegebenenfalls Ordner anpassen:
-# OBJ_LSG = obj/$(BIN_LSG).o
+OBJ_LSG = out/e4.o
 
 # Wenn ihr zuhause arbeitet, hier das TFTP-Verzeichnis eintragen
 TFTP_PATH = /srv/tftp
@@ -151,7 +149,7 @@ kernel.bin: kernel
 	$(OBJCOPY) -Obinary --set-section-flags .bss=contents,alloc,load,data $< $@
 
 kernel.img: kernel.bin
-	mkimage -A arm -T standalone -C none -a 0x8000 -d $< $@
+	mkimage -A arm -T standalone -C none -a 0x100000 -d $< $@
 
 dump:
 	$(OBJDUMP) -D kernel > kernel_dump.s

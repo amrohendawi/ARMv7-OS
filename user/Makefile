@@ -15,10 +15,13 @@
 # make clean		-- Löscht alle erzeugten Dateien.
 
 # Hier eure Dateien hinzufügen
-OBJ = 
-# Bsp für weitere:
-# OBJ += driver/uart.o
-
+OBJ = user_kprintf.o
+OBJ += syscall.o
+OBJ += src/usr_start.o
+OBJ += user_thread.o
+OBJ += user_thread_routine.o
+OBJ += user_thread_functions.o
+OBJ += heap.o
 
 # --- Ab hier sollte nichts mehr angepasst werden müssen ;D ---
 
@@ -61,16 +64,16 @@ all: user user.bin dump
 	$(CC) $(CPPFLAGS) $(CFLAGS_DEBUG) -MMD -MP -o $@ -c $<
 
 user: $(LSCRIPT) $(OBJ)
-	$(LD) -T$(LSCRIPT) -o $@ $(OBJ) $(OBJ_LSG) $(LIBGCC)
+	$(LD) -r -T$(LSCRIPT) -o $@ $(OBJ) $(OBJ_LSG)
 
 user_debug: $(LSCRIPT) $(OBJ_DEBUG)
-	$(LD) -T$(LSCRIPT) -o $@ $(OBJ_DEBUG) $(OBJ_LSG) $(LIBGCC)
+	$(LD) -r -T$(LSCRIPT) -o $@ $(OBJ_DEBUG) $(OBJ_LSG)
 
 user.bin: user
 	$(OBJCOPY) -Obinary --set-section-flags .bss=contents,alloc,load,data $< $@
 
 user.img: user.bin
-	mkimage -A arm -T standalone -C none -a 0x8000 -d $< $@
+	mkimage -A arm -T standalone -C none -a 0x100000 -d $< $@
 
 dump: user
 	$(OBJDUMP) -D user > user_dump.s

@@ -1,81 +1,129 @@
-#ifndef UART_H
-#define UART_H
-#define UART_BASE (0x7E201000 - 0x3F000000)
 
-/* flag register bits */
-#define RTXDIS	(1 << 13)
-#define TERI	(1 << 12)
-#define DDCD	(1 << 11)
-#define DDSR	(1 << 10)
-#define DCTS	(1 << 9)
-#define RI	     (1 << 8)
-#define TXFE	(1 << 7)
-#define RXFF	(1 << 6)
-#define TXFF	(1 << 5)
-#define RXFE	(1 << 4)
-#define BUSY	(1 << 3)
-#define DCD	(1 << 2)
-#define DSR	(1 << 1)
-#define CTS	(1 << 0)
-
-
-/* transmit/receive line register bits */
-#define SPS		(1 << 7)
-#define WLEN_8	(3 << 5)
-#define WLEN_7	(2 << 5)
-#define WLEN_6	(1 << 5)
-#define WLEN_5	(0 << 5)
-#define FEN		(1 << 4)
-#define STP2		(1 << 3)
-#define EPS		(1 << 2)
-#define PEN		(1 << 1)
-#define BRK		(1 << 0)
-
-/* control register bits */
-#define CTSEN		(1 << 15)
-#define RTSEN		(1 << 14)
-#define OUT2		(1 << 13)
-#define OUT1		(1 << 12)
-#define RTS		(1 << 11)
-
-#define DTR		(1 << 10)
-#define RXE		(1 << 9)
-#define TXE		(1 << 8)
-#define LPE		(1 << 7)
-#define OVSFACT		(1 << 3)
-#define UARTEN		(1 << 0)
-
-#define RTIM		(1 << 6)
-#define RXIM		(1 << 4)
+/* Mit dieser Implementierung kann der UART in folgenden
+ * Modi betrieben werden:
+ *
+ * - NOT_INIT:
+ *	Der Startzustand des UART. Nicht funktionsfähig.
+ *	Um den UART zu nutzen zuerat uart_init aufrufen.
+ *
+ * - POLL:
+ *	Das Lesen (RX) findet ohne Interrupts statt.
+ *	Die FIFO des UARTS zum Empfangen wird genutzt.
+ *
+ * - IRQ:
+ *	Das Lesen (RX) findet mit Interrupts statt.
+ *	Die FIFO des UARTS zum Empfangen wird nicht genutzt,
+ *	dafür jedoch ein Buffer um die Zeichen zwischen zu
+ *	speichern. Um das Zeichen aus dem UART Data Register
+ *	in den Buffer zu übertragen die Funktion uart_handle_irq
+ *	nutzen. Falls der Buffer voll ist, wird das Zeichen
+ *	verworfen.
+ *
+ * - Gleich bei bei POLL und IRQ:
+ *	Schreiben (TX) findet ohne Interrupts statt.
+ *	Die FIFO des UARTS zum Senden wird genutzt.
+ */
 
 
-struct uart {
-    unsigned int DR;
-    unsigned int RSRECR;
-    unsigned int unused[4];
-    unsigned int FR;
-    unsigned int unused2[2];
-    unsigned int IBRD;
-    unsigned int FBRD;
-    unsigned int LCRH;
-    unsigned int CR;
-    unsigned int IFLS;
-    unsigned int IMSC;
-    unsigned int RIS;
-    unsigned int MIS;
-    unsigned int ICR;
-    unsigned int DMACR;
-    unsigned int unused4[9];
-    unsigned int ITCR;
-    unsigned int ITIP;
-    unsigned int ITOP;
-    unsigned int TDR;
-    
-};
+#ifndef _UART_H_
+#define _UART_H_
 
-static volatile struct uart * const _uart = (struct uart *)UART_BASE;
+/* !DEPRECATED! Wird von kernel_init übernommen
+ *
+ * Initialisiert den UART
+ * Der Modus nach dem Initialisieren ist POLL
+ */
+void uart_init(void);
 
 
-void sendChar(char c);
-char recvChar(void);
-#endif
+/* Blockierend!
+ *
+ * Liest in einer aktiven Schleife das Flag Register
+ * aus, ob ein Byte geschrieben werden kann. Sobald Platz
+ * in der Fifo, wird das Byte in die Fifo eingefügt
+ */
+void uart_putc(char chr);
+
+
+/* Blockierend!
+ *
+ * -- POLL --
+ * Liest in einer aktiven Schleife das Flag Register
+ * aus, ob ein Byte gelesen werden kann. Sobald ein Byte
+ * vorhanden ist in der FIFO, wird das Byte ausgelesen und
+ * zurück gegeben.
+ *
+ * -- IRQ  --
+ * Überprüft in einer aktiven Schleife ob ein Byte im
+ * Buffer vorhanden ist. Sobald ein Byte vorhande ist,
+ * wird es zurück gegeben und aus dem Buffer entfernt.
+ *
+ * Wenn sicher gestellt werden
+ * soll, dass dies Funktion nicht blockiert zuerst mit
+ * uart_read_available überprüfen ob ein Byte gelesen
+ * werden kann.
+ */
+char uart_getc(void);
+
+/* Blockierend!
+ *
+ * -- POLL --
+ * Wie uart_getc
+ *
+ * -- IRQ  --
+ * Wie uart_getc, jedoch wird das gelesene Zeichen nicht aus dem
+ * Buffer entfernt
+ *
+ * Wenn sicher gestellt werden
+ * soll, dass dies Funktion nicht blockiert zuerst mit
+ * uart_read_available überprüfen ob ein Byte gelesen
+ * werden kann.
+ */
+char uart_peekc(void);
+
+/* Überprüft, ob ein Byte mit uart_getc gelesen werden
+ * kann. Gibt zurück:
+ * 1 -> Falls Byte vorhanden.
+ * 0 -> Sonst.
+ */
+int uart_read_available();
+
+
+/* ! Achtung beim umschalten der Modi gehen alle nicht !
+ * ! Verarbeiteten Bytes verloren.                     !
+ *
+ * Hält den UART zwischenzeitig an, löscht alle
+ * Interrupts und empfangenen bzw. zu versendenden Bytes
+ * und stellt den UART auf IRQ Modus um.
+ */
+void uart_irq_enable();
+
+
+/* ! Achtung beim umschalten der Modi gehen alle nicht !
+ * ! Verarbeiteten Bytes verloren.                     !
+ *
+ * Hält den UART zwischenzeitig an, löscht alle
+ * Interrupts und empfangenen bzw. zu versendenden Bytes
+ * und stellt den UART auf POLL Modus um.
+ */
+void uart_irq_disable();
+
+
+/* Nur im IRQ Modus!
+ * Gibt an ob ein UART spezifischer Interrupt aufgetreten ist.
+ * Gibt zurück:
+ * 1 -> Falls irq aufgetreten
+ * 0 -> Sonst
+ */
+int uart_irq_pending();
+
+
+/* Nur im IRQ Modus!
+ * Aufrufen um aufgetretenen UART Interrupt zu behandeln
+ * Liest das angekommene Byte (falls vorhanden) und fügt
+ * es dem Buffer hinzu. Falls der Buffer voll ist, wird
+ * das Byte verworfen.
+ */
+void uart_handle_irq();
+
+#endif /* _UART_H_ */
