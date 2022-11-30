@@ -77,20 +77,6 @@ OBJ_DEBUG = $(OBJ:.o=.o_d)
 # Abgabe Dateien
 SUBMISSION_FILES = $(shell find . -name '*' -not -name '*.tar.gz' -not -name '.*' -not -type d -not -name '*.pdf' -not -path './.*')
 
-# Abgabe check
-ifeq ($(shell test "$$(wc -l < matrikel_nr.txt)" -gt 2; echo $$?),0)
-$(error "matrikel_nr.txt ist fehlerhaft oder leer!")
-endif
-
-ifeq ($(shell egrep -vq '^[0-9]{6}$$' matrikel_nr.txt; echo $$?),0)
-$(error "matrikel_nr.txt ist fehlerhaft oder leer!")
-endif
-
-MATRIKEL_NR = $(shell awk '(NR > 1) && (NR < 3)  {ORS="+"; print prev} {prev=$$1} END { ORS=""; print $$1 }' matrikel_nr.txt )
-
-ifeq ($(MATRIKEL_NR), )
-$(error "matrikel_nr.txt ist fehlerhaft oder leer!")
-endif
 
 # Konfiguration
 CC = arm-none-eabi-gcc
@@ -170,11 +156,11 @@ clean:
 	rm -f $(OBJ)
 	rm -f $(OBJ_DEBUG)
 	rm -f $(DEP)
-	rm -f "$(MATRIKEL_NR).tar.gz"
+	rm -f "OS.tar.gz"
 	$(MAKE) -C user clean
 
 submission:	clean 
-	tar -czf "$(MATRIKEL_NR).tar.gz" $(SUBMISSION_FILES)
+	tar -czf "OS.tar.gz" $(SUBMISSION_FILES)
 
 home: kernel.img
 	cp -v kernel.img $(TFTP_PATH)
