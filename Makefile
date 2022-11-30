@@ -27,10 +27,8 @@
 #			   Arbeit zuhause einfach den Pfad eintragen
 
 
-# Ab Aufgabe 4 auf true
 KERNEL_USER_SPLIT = true
 
-# Hier eure Dateien hinzufügen
 # System
 OBJ = system/entry.o
 OBJ += system/start.o
@@ -46,11 +44,10 @@ OBJ += memory/mmu_assembly_funcs.o
 OBJ += memory/mmu.o
 OBJ += system/process.o
 
-# Falls die binäre Musterlösung benutzt wird bitte auskommentieren
-# und gegebenenfalls Ordner anpassen:
+# Binäre Dateien
 OBJ_LSG = out/e4.o
 
-# Wenn ihr zuhause arbeitet, hier das TFTP-Verzeichnis eintragen
+# TFTP-Verzeichnis für remote sessions
 TFTP_PATH = /srv/tftp
 
 # --- Ab hier sollte nichts mehr angepasst werden müssen ;D ---
